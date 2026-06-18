@@ -55,6 +55,32 @@ void main() {
     expect(emptySlot.every((byte) => byte == 0xff), isTrue);
   });
 
+  test('bluetooth write plan matches web stream and config grouping', () {
+    final data = RadioAppData.defaults();
+    data.channels[0][0] = Channel(
+      id: 1,
+      rxFreq: '439.46250',
+      txFreq: '434.46250',
+      visible: true,
+    );
+    data.bankNames[1] = '中继台';
+
+    final pairs = ShxCodec.groupBluetoothWritePairs(
+      ShxCodec.bluetoothWriteBlocks(data),
+    );
+    final streamStarts = pairs
+        .where((pair) => pair.$2.address == pair.$1.address + 0x40)
+        .map((pair) => pair.$1.address)
+        .toList();
+    final configWrites = pairs
+        .where((pair) => pair.$2.address != pair.$1.address + 0x40)
+        .expand((pair) => [pair.$1.address, pair.$2.address])
+        .toList();
+
+    expect(streamStarts, [0x0000, 0xa000, 0xa080, 0xa200]);
+    expect(configWrites, [0x8000, 0x9000, 0xa100, 0xb000]);
+  });
+
   test('encodes and decodes DCS tones like the web codec', () {
     final data = RadioAppData.defaults();
     data.channels[0][0] = Channel(

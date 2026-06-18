@@ -7881,13 +7881,56 @@ class ShxCodec {
   static List<(ShxBlock, ShxBlock)> groupBluetoothWritePairs(
     List<ShxBlock> blocks,
   ) {
-    if (blocks.length.isOdd) {
-      blocks.add(blocks.last);
-    }
+    final byAddress = <int, ShxBlock>{
+      for (final block in blocks) block.address: block,
+    };
+    final used = <int>{};
     final pairs = <(ShxBlock, ShxBlock)>[];
-    for (var index = 0; index < blocks.length; index += 2) {
-      pairs.add((blocks[index], blocks[index + 1]));
+
+    for (final first in blocks) {
+      if (used.contains(first.address)) {
+        continue;
+      }
+
+      final streamSecond = byAddress[first.address + framePayloadBytes];
+      if (streamSecond != null && !used.contains(streamSecond.address)) {
+        used
+          ..add(first.address)
+          ..add(streamSecond.address);
+        pairs.add((first, streamSecond));
+        continue;
+      }
+
+      final fallback =
+          blocks.cast<ShxBlock?>().firstWhere((candidate) {
+            if (candidate == null ||
+                candidate.address == first.address ||
+                used.contains(candidate.address)) {
+              return false;
+            }
+            return !byAddress.containsKey(
+                  candidate.address - framePayloadBytes,
+                ) &&
+                !byAddress.containsKey(candidate.address + framePayloadBytes);
+          }, orElse: () => null) ??
+          blocks.cast<ShxBlock?>().firstWhere(
+            (candidate) =>
+                candidate != null &&
+                candidate.address != first.address &&
+                !used.contains(candidate.address),
+            orElse: () => null,
+          );
+
+      if (fallback == null) {
+        throw StateError('蓝牙写入失败：${addressLabel(first.address)} 缺少配对块');
+      }
+
+      used
+        ..add(first.address)
+        ..add(fallback.address);
+      pairs.add((first, fallback));
     }
+
     return pairs;
   }
 
