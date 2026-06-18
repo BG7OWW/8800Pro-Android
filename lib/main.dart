@@ -2493,6 +2493,14 @@ class _ToolsPageState extends State<ToolsPage> {
 
   MobileStore get store => widget.store;
 
+  void openToolSheet(String title, List<Widget> children) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => ToolDetailSheet(title: title, children: children),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return CustomScrollView(
@@ -2645,22 +2653,112 @@ class _ToolsPageState extends State<ToolsPage> {
                           title: 'VFO 频率',
                           icon: Icons.waves_rounded,
                           color: const Color(0xFF0F9D8A),
+                          onTap: () => openToolSheet('VFO 频率', [
+                            VfoEditor(
+                              title: 'A 段',
+                              frequency: store.data.vfoA,
+                              offset: store.data.vfoAOffset,
+                              rxTone: store.data.vfoARxTone,
+                              txTone: store.data.vfoATxTone,
+                              txPower: store.data.vfoATxPower,
+                              bandwidth: store.data.vfoABandwidth,
+                              step: store.data.vfoAStep,
+                              onFrequencyChanged: (value) =>
+                                  store.updateVfo((data) => data.vfoA = value),
+                              onOffsetChanged: (value) => store.updateVfo(
+                                (data) => data.vfoAOffset = value,
+                              ),
+                              onRxToneChanged: (value) => store.updateVfo(
+                                (data) => data.vfoARxTone = value,
+                              ),
+                              onTxToneChanged: (value) => store.updateVfo(
+                                (data) => data.vfoATxTone = value,
+                              ),
+                              onTxPowerChanged: (value) => store.updateVfo(
+                                (data) => data.vfoATxPower = value,
+                              ),
+                              onBandwidthChanged: (value) => store.updateVfo(
+                                (data) => data.vfoABandwidth = value,
+                              ),
+                              onStepChanged: (value) => store.updateVfo(
+                                (data) => data.vfoAStep = value,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            VfoEditor(
+                              title: 'B 段',
+                              frequency: store.data.vfoB,
+                              offset: store.data.vfoBOffset,
+                              rxTone: store.data.vfoBRxTone,
+                              txTone: store.data.vfoBTxTone,
+                              txPower: store.data.vfoBTxPower,
+                              bandwidth: store.data.vfoBBandwidth,
+                              step: store.data.vfoBStep,
+                              onFrequencyChanged: (value) =>
+                                  store.updateVfo((data) => data.vfoB = value),
+                              onOffsetChanged: (value) => store.updateVfo(
+                                (data) => data.vfoBOffset = value,
+                              ),
+                              onRxToneChanged: (value) => store.updateVfo(
+                                (data) => data.vfoBRxTone = value,
+                              ),
+                              onTxToneChanged: (value) => store.updateVfo(
+                                (data) => data.vfoBTxTone = value,
+                              ),
+                              onTxPowerChanged: (value) => store.updateVfo(
+                                (data) => data.vfoBTxPower = value,
+                              ),
+                              onBandwidthChanged: (value) => store.updateVfo(
+                                (data) => data.vfoBBandwidth = value,
+                              ),
+                              onStepChanged: (value) => store.updateVfo(
+                                (data) => data.vfoBStep = value,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            ActionButton(
+                              label: '保存',
+                              icon: Icons.check_circle_rounded,
+                              primary: true,
+                              onPressed: store.saveVfoSettings,
+                            ),
+                          ]),
                         ),
                         ToolShortcutItem(
                           title: 'DTMF 编码',
                           icon: Icons.dialpad_rounded,
                           color: const Color(0xFF326BFF),
+                          onTap: () => openToolSheet('DTMF 编码', [
+                            DtmfToolEditor(store: store),
+                          ]),
                         ),
                         ToolShortcutItem(
                           title: 'FM 收音',
                           icon: Icons.radio_rounded,
                           color: const Color(0xFFFF8A00),
+                          onTap: () => openToolSheet('FM 收音', [
+                            FmToolEditor(store: store),
+                          ]),
                         ),
                         ToolShortcutItem(
                           title: '开机图',
                           subtitle: '开发中',
                           icon: Icons.photo_rounded,
                           color: const Color(0xFF6D5BD0),
+                          onTap: () => openToolSheet('开机图', [
+                            const FormFieldCard(
+                              title: '状态',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.construction_rounded),
+                                  SizedBox(width: 10),
+                                  Expanded(child: Text('开发中，暂时不可写入开机图。')),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            HintTile(text: store.data.bootImage.previewNote),
+                          ]),
                         ),
                       ],
                     ),
@@ -6698,12 +6796,14 @@ class ToolShortcutItem {
     required this.icon,
     required this.color,
     this.subtitle = '下方编辑',
+    this.onTap,
   });
 
   final String title;
   final String subtitle;
   final IconData icon;
   final Color color;
+  final VoidCallback? onTap;
 }
 
 class ToolShortcutGrid extends StatelessWidget {
@@ -6728,35 +6828,364 @@ class ToolShortcutGrid extends StatelessWidget {
           ),
           itemBuilder: (context, index) {
             final item = items[index];
-            return Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FCFB),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: const Color(0xFFE7F1EE)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(item.icon, color: item.color),
-                  const Spacer(),
-                  Text(
-                    item.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w900),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    item.subtitle,
-                    style: const TextStyle(fontSize: 12, color: Colors.black54),
-                  ),
-                ],
+            return InkWell(
+              onTap: item.onTap,
+              borderRadius: BorderRadius.circular(18),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FCFB),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: const Color(0xFFE7F1EE)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(item.icon, color: item.color),
+                    const Spacer(),
+                    Text(
+                      item.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            item.subtitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.black54,
+                            ),
+                          ),
+                        ),
+                        if (item.onTap != null)
+                          const Icon(
+                            Icons.chevron_right_rounded,
+                            size: 18,
+                            color: Colors.black38,
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             );
           },
         );
       },
+    );
+  }
+}
+
+class ToolDetailSheet extends StatelessWidget {
+  const ToolDetailSheet({
+    super.key,
+    required this.title,
+    required this.children,
+  });
+
+  final String title;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.88,
+        minChildSize: 0.55,
+        maxChildSize: 0.96,
+        builder: (context, controller) {
+          return Material(
+            color: const Color(0xFFF4FBF9),
+            child: ListView(
+              controller: controller,
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+              children: [
+                Row(
+                  children: [
+                    IconButton(
+                      tooltip: '关闭',
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                    Expanded(
+                      child: Text(
+                        title,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('完成'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ...children,
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class DtmfToolEditor extends StatelessWidget {
+  const DtmfToolEditor({super.key, required this.store});
+
+  final MobileStore store;
+
+  @override
+  Widget build(BuildContext context) {
+    return PanelCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionHeader(
+            title: 'DTMF',
+            subtitle: '配置本机 ID、PTT ID、发码时长和组呼编码。',
+          ),
+          const SizedBox(height: 12),
+          FormFieldCard(
+            title: '本机 ID',
+            child: TextFormField(
+              key: ValueKey('sheet-dtmf-id-${store.data.dtmf.localId}'),
+              initialValue: store.data.dtmf.localId,
+              decoration: const InputDecoration(hintText: '100'),
+              onChanged: (value) =>
+                  store.updateDtmf((dtmf) => dtmf.localId = value),
+            ),
+          ),
+          const SizedBox(height: 10),
+          FormFieldCard(
+            title: 'PTT ID',
+            child: DropdownButtonFormField<int>(
+              initialValue: store.data.dtmf.pttId
+                  .clamp(0, RadioChoices.pttId.length - 1)
+                  .toInt(),
+              items: List.generate(
+                RadioChoices.pttId.length,
+                (index) => DropdownMenuItem(
+                  value: index,
+                  child: Text(RadioChoices.pttId[index]),
+                ),
+              ),
+              onChanged: (value) =>
+                  store.updateDtmf((dtmf) => dtmf.pttId = value ?? 0),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: FormFieldCard(
+                  title: '发码时长',
+                  child: TextFormField(
+                    key: ValueKey(
+                      'sheet-dtmf-word-${store.data.dtmf.wordTime}',
+                    ),
+                    initialValue: '${store.data.dtmf.wordTime}',
+                    keyboardType: TextInputType.number,
+                    onChanged: (value) => store.updateDtmf(
+                      (dtmf) => dtmf.wordTime = int.tryParse(value) ?? 1,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: FormFieldCard(
+                  title: '空闲间隔',
+                  child: TextFormField(
+                    key: ValueKey(
+                      'sheet-dtmf-idle-${store.data.dtmf.idleTime}',
+                    ),
+                    initialValue: '${store.data.dtmf.idleTime}',
+                    keyboardType: TextInputType.number,
+                    onChanged: (value) => store.updateDtmf(
+                      (dtmf) => dtmf.idleTime = int.tryParse(value) ?? 1,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: store.data.dtmf.groups.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 2.5,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+            ),
+            itemBuilder: (context, index) {
+              return FormFieldCard(
+                title: store.data.dtmf.groupNames[index],
+                compact: true,
+                child: TextFormField(
+                  key: ValueKey(
+                    'sheet-dtmf-$index-${store.data.dtmf.groups[index]}',
+                  ),
+                  initialValue: store.data.dtmf.groups[index],
+                  decoration: const InputDecoration(hintText: 'DTMF'),
+                  onChanged: (value) =>
+                      store.updateDtmf((dtmf) => dtmf.groups[index] = value),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          ActionButton(
+            label: '保存',
+            icon: Icons.check_circle_rounded,
+            primary: true,
+            onPressed: store.saveDtmfSettings,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class FmToolEditor extends StatelessWidget {
+  const FmToolEditor({super.key, required this.store});
+
+  final MobileStore store;
+
+  @override
+  Widget build(BuildContext context) {
+    return PanelCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionHeader(title: 'FM 广播', subtitle: '编辑当前频率与广播电台记忆。'),
+          const SizedBox(height: 12),
+          FormFieldCard(
+            title: '当前频点',
+            child: Row(
+              children: [
+                IconButton.filledTonal(
+                  tooltip: '减少 0.1 MHz',
+                  onPressed: () => store.stepFmCurrent(-1),
+                  icon: const Icon(Icons.remove_rounded),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextFormField(
+                    key: ValueKey(
+                      'sheet-fm-current-${store.data.fm.currentFreq}',
+                    ),
+                    initialValue: FmFrequency.formatDraft(
+                      store.data.fm.currentFreq,
+                    ),
+                    decoration: const InputDecoration(
+                      hintText: '90.4',
+                      suffixText: 'MHz',
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    onChanged: store.setFmCurrentFromDraft,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton.filledTonal(
+                  tooltip: '增加 0.1 MHz',
+                  onPressed: () => store.stepFmCurrent(1),
+                  icon: const Icon(Icons.add_rounded),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final columns = constraints.maxWidth < 560 ? 2 : 3;
+              return GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: store.data.fm.channels.length,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: columns,
+                  childAspectRatio: columns == 2 ? 1.25 : 1.45,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                ),
+                itemBuilder: (context, index) {
+                  final value = store.data.fm.channels[index];
+                  return FormFieldCard(
+                    title: '记忆 ${index + 1}',
+                    compact: true,
+                    child: Column(
+                      children: [
+                        TextFormField(
+                          key: ValueKey('sheet-fm-$index-$value'),
+                          initialValue: FmFrequency.formatDraft(value),
+                          decoration: const InputDecoration(
+                            hintText: '88.7',
+                            suffixText: 'MHz',
+                          ),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          onChanged: (text) =>
+                              store.setFmMemoryFromDraft(index, text),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            IconButton(
+                              tooltip: '载入',
+                              visualDensity: VisualDensity.compact,
+                              onPressed: () => store.loadFmMemory(index),
+                              icon: const Icon(Icons.play_arrow_rounded),
+                            ),
+                            IconButton(
+                              tooltip: '保存当前频点',
+                              visualDensity: VisualDensity.compact,
+                              onPressed: () =>
+                                  store.saveCurrentFmToMemory(index),
+                              icon: const Icon(Icons.save_alt_rounded),
+                            ),
+                            IconButton(
+                              tooltip: '删除',
+                              visualDensity: VisualDensity.compact,
+                              onPressed: () => store.clearFmMemory(index),
+                              icon: const Icon(Icons.delete_outline_rounded),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          ActionButton(
+            label: '保存',
+            icon: Icons.check_circle_rounded,
+            primary: true,
+            onPressed: store.saveFmSettings,
+          ),
+        ],
+      ),
     );
   }
 }
