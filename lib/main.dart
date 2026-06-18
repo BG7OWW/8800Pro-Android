@@ -2584,6 +2584,56 @@ class _ToolsPageState extends State<ToolsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 46,
+                          height: 46,
+                          decoration: BoxDecoration(
+                            color: const Color(0x1F0F9D8A),
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          child: const Icon(
+                            Icons.hub_rounded,
+                            color: Color(0xFF0F9D8A),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: SectionHeader(
+                            title: '网页同款蓝牙链路',
+                            subtitle: 'Android 端沿用网页端已验证的读写频协议，并保留读频获得的原始块。',
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ProtocolChip(
+                            label: 'raw ${store.data.rawBlocks.length}',
+                            icon: Icons.inventory_2_rounded,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: ProtocolChip(
+                            label: '区域名保护',
+                            icon: Icons.rectangle_rounded,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: ProtocolChip(
+                            label: '污染过滤',
+                            icon: Icons.shield_rounded,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
                     const SectionHeader(
                       title: '高级写频',
                       subtitle: 'VFO、DTMF、FM 与开机图都放在这里集中处理。',
@@ -2663,8 +2713,8 @@ class _ToolsPageState extends State<ToolsPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SectionHeader(
-                      title: '蓝牙链路调试',
-                      subtitle: '先把状态、通知和发包入口看清楚，后续接协议时会轻松很多。',
+                      title: '通信诊断',
+                      subtitle: '只保留连接状态和断开入口；底层握手由读写频流程自动处理。',
                     ),
                     const SizedBox(height: 12),
                     InfoStrip(title: '链路状态', detail: store.linkState.label),
@@ -2687,26 +2737,6 @@ class _ToolsPageState extends State<ToolsPage> {
                             label: '断开',
                             icon: Icons.link_off_rounded,
                             onPressed: store.disconnect,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ActionButton(
-                            label: '发握手',
-                            icon: Icons.send_rounded,
-                            onPressed: store.sendHandshakeTest,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: ActionButton(
-                            label: '发 0x45',
-                            icon: Icons.send_and_archive_rounded,
-                            onPressed: store.sendEndFrameTest,
                           ),
                         ),
                       ],
@@ -6579,6 +6609,43 @@ class BigMetricCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(title, style: const TextStyle(color: Colors.black54)),
+        ],
+      ),
+    );
+  }
+}
+
+class ProtocolChip extends StatelessWidget {
+  const ProtocolChip({super.key, required this.label, required this.icon});
+
+  final String label;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0x140F9D8A),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 15, color: const Color(0xFF0F9D8A)),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Color(0xFF0F9D8A),
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
         ],
       ),
     );
