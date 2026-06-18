@@ -45,16 +45,17 @@ class _Radio8800AppState extends State<Radio8800App> {
     return AnimatedBuilder(
       animation: store,
       builder: (context, _) {
+        final palette = store.palette;
         return MaterialApp(
           debugShowCheckedModeBanner: false,
           title: '8800Pro 写频',
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(
-              seedColor: const Color(0xFF0F9D8A),
+              seedColor: palette.seed,
               brightness: Brightness.light,
             ),
             useMaterial3: true,
-            scaffoldBackgroundColor: const Color(0xFFF4FBF9),
+            scaffoldBackgroundColor: palette.scaffold,
             cardTheme: const CardThemeData(
               elevation: 0,
               color: Colors.white,
@@ -73,16 +74,13 @@ class _Radio8800AppState extends State<Radio8800App> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(
-                  color: Color(0xFF0F9D8A),
-                  width: 1.5,
-                ),
+                borderSide: BorderSide(color: palette.seed, width: 1.5),
               ),
             ),
             navigationBarTheme: NavigationBarThemeData(
               elevation: 0,
               backgroundColor: Colors.white.withValues(alpha: 0.96),
-              indicatorColor: const Color(0x1F0F9D8A),
+              indicatorColor: palette.seed.withValues(alpha: 0.12),
               labelTextStyle: WidgetStateProperty.resolveWith(
                 (states) => TextStyle(
                   fontSize: 12,
@@ -806,22 +804,6 @@ class ChannelsPage extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 14),
-                    SegmentedButton<AppUIMode>(
-                      segments: const [
-                        ButtonSegment(
-                          value: AppUIMode.basic,
-                          label: Text('基础'),
-                        ),
-                        ButtonSegment(
-                          value: AppUIMode.advanced,
-                          label: Text('高级'),
-                        ),
-                      ],
-                      selected: {store.uiMode},
-                      onSelectionChanged: (value) =>
-                          store.setUiMode(value.first),
-                    ),
                     const SizedBox(height: 12),
                     SizedBox(
                       height: 42,
@@ -873,10 +855,7 @@ class ChannelsPage extends StatelessWidget {
                             label: '新建信道',
                             icon: Icons.add_circle_outline_rounded,
                             primary: true,
-                            onPressed: () {
-                              store.prepareNewChannelInCurrentBank();
-                              openChannelEditor();
-                            },
+                            onPressed: store.prepareNewChannelInCurrentBank,
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -1201,7 +1180,7 @@ class ChannelEditorSheet extends StatelessWidget {
                         data: theme.copyWith(dividerColor: Colors.transparent),
                         child: ExpansionTile(
                           tilePadding: EdgeInsets.zero,
-                          initiallyExpanded: store.uiMode == AppUIMode.advanced,
+                          initiallyExpanded: true,
                           title: const Text('更多参数'),
                           childrenPadding: const EdgeInsets.only(bottom: 4),
                           children: [
@@ -1345,25 +1324,14 @@ class ChannelEditorSheet extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ActionButton(
-                        label: '写频',
-                        icon: Icons.upload_rounded,
-                        primary: true,
-                        onPressed: store.writeRadio,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: ActionButton(
-                        label: '手动备份',
-                        icon: Icons.save_rounded,
-                        onPressed: () => store.createBackup('手动备份'),
-                      ),
-                    ),
-                  ],
+                ActionButton(
+                  label: '保存',
+                  icon: Icons.check_circle_rounded,
+                  primary: true,
+                  onPressed: () {
+                    store.saveChannelSettings();
+                    Navigator.of(context).pop();
+                  },
                 ),
                 const SizedBox(height: 10),
                 ActionButton(
@@ -1552,8 +1520,6 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  bool showHelp = false;
-
   MobileStore get store => widget.store;
 
   @override
@@ -1848,87 +1814,6 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              SettingsSectionPanel(
-                title: '补充设置',
-                subtitle: '这些项目不常改，但仍会随 0x9000 功能块保存。',
-                icon: Icons.more_horiz_rounded,
-                color: const Color(0xFF6D5BD0),
-                children: [
-                  settingMenu(
-                    title: '发射限时',
-                    subtitle: '限制单次连续发射时间',
-                    icon: Icons.hourglass_bottom_rounded,
-                    color: const Color(0xFF6D5BD0),
-                    value: store.data.functions.tot,
-                    options: RadioChoices.tot,
-                    onChanged: (value) =>
-                        store.updateFunction((f) => f.tot = value),
-                  ),
-                  settingMenu(
-                    title: 'FM 收音',
-                    subtitle: '打开或关闭 FM 收音功能',
-                    icon: Icons.radio_rounded,
-                    color: const Color(0xFF6D5BD0),
-                    value: store.data.functions.fmEnable,
-                    options: RadioChoices.onOff,
-                    onChanged: (value) =>
-                        store.updateFunction((f) => f.fmEnable = value),
-                  ),
-                  settingMenu(
-                    title: '菜单退出',
-                    subtitle: '菜单闲置自动退出时间',
-                    icon: Icons.exit_to_app_rounded,
-                    color: const Color(0xFF6D5BD0),
-                    value: store.data.functions.menuQuitTime,
-                    options: RadioChoices.menuQuitTime,
-                    onChanged: (value) =>
-                        store.updateFunction((f) => f.menuQuitTime = value),
-                  ),
-                  settingMenu(
-                    title: '报警模式',
-                    subtitle: '本机报警触发后的处理方式',
-                    icon: Icons.warning_amber_rounded,
-                    color: const Color(0xFF6D5BD0),
-                    value: store.data.functions.alarmMode,
-                    options: RadioChoices.alarmMode,
-                    onChanged: (value) =>
-                        store.updateFunction((f) => f.alarmMode = value),
-                  ),
-                  SettingTextTile(
-                    title: '呼号 / 备注',
-                    subtitle: '用于开机显示或本地备注',
-                    icon: Icons.badge_rounded,
-                    color: const Color(0xFF6D5BD0),
-                    initialValue: store.data.functions.callSign,
-                    hint: '例：BG7OWW',
-                    onChanged: store.setCallSign,
-                  ),
-                  SettingHelpTile(
-                    showHelp: showHelp,
-                    onChanged: (value) => setState(() => showHelp = value),
-                  ),
-                ],
-              ),
-              if (showHelp) ...[
-                const SizedBox(height: 16),
-                PanelCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SectionHeader(
-                        title: '设置说明',
-                        subtitle: '这些说明来自实际写频参数和常见使用场景。',
-                      ),
-                      const SizedBox(height: 12),
-                      for (final topic in DemoData.settingsHelp) ...[
-                        InfoCard(title: topic.title, detail: topic.detail),
-                        const SizedBox(height: 10),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
               const SizedBox(height: 16),
               HeroPanel(
                 child: Column(
@@ -2488,9 +2373,6 @@ class ToolsPage extends StatefulWidget {
 }
 
 class _ToolsPageState extends State<ToolsPage> {
-  bool showDtmfHelp = false;
-  bool showFmHelp = false;
-
   MobileStore get store => widget.store;
 
   void openToolSheet(String title, List<Widget> children) {
@@ -2771,70 +2653,76 @@ class _ToolsPageState extends State<ToolsPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SectionHeader(
+                      title: '数据维护',
+                      subtitle: '备份、日志和通信状态都从子菜单进入。',
+                    ),
+                    const SizedBox(height: 12),
+                    ToolShortcutGrid(
+                      items: [
+                        ToolShortcutItem(
+                          title: '备份恢复',
+                          subtitle: '${store.backups.length} 个快照',
+                          icon: Icons.folder_copy_rounded,
+                          color: const Color(0xFF20A86B),
+                          onTap: () => openToolSheet('备份与恢复', [
+                            BackupToolPanel(store: store),
+                          ]),
+                        ),
+                        ToolShortcutItem(
+                          title: '通信日志',
+                          subtitle: '${store.logs.length} 行日志',
+                          icon: Icons.article_rounded,
+                          color: const Color(0xFF6D5BD0),
+                          onTap: () => openToolSheet('通信日志', [
+                            LogToolPanel(store: store),
+                          ]),
+                        ),
+                        ToolShortcutItem(
+                          title: '通信诊断',
+                          subtitle: store.linkState.label,
+                          icon: Icons.hub_rounded,
+                          color: const Color(0xFF326BFF),
+                          onTap: () => openToolSheet('通信诊断', [
+                            DiagnosticsToolPanel(store: store),
+                          ]),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              PanelCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SectionHeader(
                       title: '帮助与说明',
-                      subtitle: '教程和关于不再占主导航，从这里进入。',
+                      subtitle: '教程和关于项目也作为子菜单打开。',
                     ),
                     const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ActionButton(
-                            label: '新手教程',
-                            icon: Icons.menu_book_rounded,
-                            onPressed: () => showModalBottomSheet<void>(
-                              context: context,
-                              isScrollControlled: true,
-                              builder: (_) => const GuideSheet(),
-                            ),
+                    ToolShortcutGrid(
+                      items: [
+                        ToolShortcutItem(
+                          title: '新手教程',
+                          subtitle: '流程说明',
+                          icon: Icons.menu_book_rounded,
+                          color: const Color(0xFF0F9D8A),
+                          onTap: () => showModalBottomSheet<void>(
+                            context: context,
+                            isScrollControlled: true,
+                            builder: (_) => const GuideSheet(),
                           ),
                         ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: ActionButton(
-                            label: '关于项目',
-                            icon: Icons.info_outline_rounded,
-                            onPressed: () => showModalBottomSheet<void>(
-                              context: context,
-                              isScrollControlled: true,
-                              builder: (_) => const AboutSheet(),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              PanelCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SectionHeader(
-                      title: '通信诊断',
-                      subtitle: '只保留连接状态和断开入口；底层握手由读写频流程自动处理。',
-                    ),
-                    const SizedBox(height: 12),
-                    InfoStrip(title: '链路状态', detail: store.linkState.label),
-                    const SizedBox(height: 8),
-                    InfoStrip(title: '当前说明', detail: store.progressNote),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ActionButton(
-                            label: '连接蓝牙',
-                            icon: Icons.bluetooth_searching_rounded,
-                            primary: true,
-                            onPressed: store.connectBluetooth,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: ActionButton(
-                            label: '断开',
-                            icon: Icons.link_off_rounded,
-                            onPressed: store.disconnect,
+                        ToolShortcutItem(
+                          title: '关于项目',
+                          subtitle: '版本与致谢',
+                          icon: Icons.info_outline_rounded,
+                          color: const Color(0xFF6D5BD0),
+                          onTap: () => showModalBottomSheet<void>(
+                            context: context,
+                            isScrollControlled: true,
+                            builder: (_) => const AboutSheet(),
                           ),
                         ),
                       ],
@@ -2843,475 +2731,7 @@ class _ToolsPageState extends State<ToolsPage> {
                 ),
               ),
               const SizedBox(height: 16),
-              PanelCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SectionHeader(
-                      title: 'VFO',
-                      subtitle: '频率模式常用参数先在这里整理。',
-                    ),
-                    const SizedBox(height: 12),
-                    VfoEditor(
-                      title: 'A 段',
-                      frequency: store.data.vfoA,
-                      offset: store.data.vfoAOffset,
-                      rxTone: store.data.vfoARxTone,
-                      txTone: store.data.vfoATxTone,
-                      txPower: store.data.vfoATxPower,
-                      bandwidth: store.data.vfoABandwidth,
-                      step: store.data.vfoAStep,
-                      onFrequencyChanged: (value) =>
-                          store.updateVfo((data) => data.vfoA = value),
-                      onOffsetChanged: (value) =>
-                          store.updateVfo((data) => data.vfoAOffset = value),
-                      onRxToneChanged: (value) =>
-                          store.updateVfo((data) => data.vfoARxTone = value),
-                      onTxToneChanged: (value) =>
-                          store.updateVfo((data) => data.vfoATxTone = value),
-                      onTxPowerChanged: (value) =>
-                          store.updateVfo((data) => data.vfoATxPower = value),
-                      onBandwidthChanged: (value) =>
-                          store.updateVfo((data) => data.vfoABandwidth = value),
-                      onStepChanged: (value) =>
-                          store.updateVfo((data) => data.vfoAStep = value),
-                    ),
-                    const SizedBox(height: 12),
-                    VfoEditor(
-                      title: 'B 段',
-                      frequency: store.data.vfoB,
-                      offset: store.data.vfoBOffset,
-                      rxTone: store.data.vfoBRxTone,
-                      txTone: store.data.vfoBTxTone,
-                      txPower: store.data.vfoBTxPower,
-                      bandwidth: store.data.vfoBBandwidth,
-                      step: store.data.vfoBStep,
-                      onFrequencyChanged: (value) =>
-                          store.updateVfo((data) => data.vfoB = value),
-                      onOffsetChanged: (value) =>
-                          store.updateVfo((data) => data.vfoBOffset = value),
-                      onRxToneChanged: (value) =>
-                          store.updateVfo((data) => data.vfoBRxTone = value),
-                      onTxToneChanged: (value) =>
-                          store.updateVfo((data) => data.vfoBTxTone = value),
-                      onTxPowerChanged: (value) =>
-                          store.updateVfo((data) => data.vfoBTxPower = value),
-                      onBandwidthChanged: (value) =>
-                          store.updateVfo((data) => data.vfoBBandwidth = value),
-                      onStepChanged: (value) =>
-                          store.updateVfo((data) => data.vfoBStep = value),
-                    ),
-                    const SizedBox(height: 12),
-                    ActionButton(
-                      label: '保存',
-                      icon: Icons.check_circle_rounded,
-                      primary: true,
-                      onPressed: store.saveVfoSettings,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              PanelCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SectionHeader(
-                      title: 'DTMF',
-                      subtitle: '可以先填常用 ID 和组呼编码，后续接协议后会直接写回设备。',
-                    ),
-                    const SizedBox(height: 12),
-                    FormFieldCard(
-                      title: '本机 ID',
-                      child: TextFormField(
-                        key: ValueKey('dtmf-id-${store.data.dtmf.localId}'),
-                        initialValue: store.data.dtmf.localId,
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                          hintText: '100',
-                        ),
-                        onChanged: (value) =>
-                            store.updateDtmf((dtmf) => dtmf.localId = value),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    FormFieldCard(
-                      title: 'PTT ID',
-                      child: DropdownButtonFormField<int>(
-                        initialValue: store.data.dtmf.pttId
-                            .clamp(0, RadioChoices.pttId.length - 1)
-                            .toInt(),
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                        ),
-                        items: List.generate(
-                          RadioChoices.pttId.length,
-                          (index) => DropdownMenuItem(
-                            value: index,
-                            child: Text(RadioChoices.pttId[index]),
-                          ),
-                        ),
-                        onChanged: (value) =>
-                            store.updateDtmf((dtmf) => dtmf.pttId = value ?? 0),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: FormFieldCard(
-                            title: '发码时长',
-                            child: TextFormField(
-                              key: ValueKey(
-                                'dtmf-word-${store.data.dtmf.wordTime}',
-                              ),
-                              initialValue: '${store.data.dtmf.wordTime}',
-                              decoration: const InputDecoration(
-                                border: OutlineInputBorder(),
-                              ),
-                              keyboardType: TextInputType.number,
-                              onChanged: (value) => store.updateDtmf(
-                                (dtmf) =>
-                                    dtmf.wordTime = int.tryParse(value) ?? 1,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: FormFieldCard(
-                            title: '空闲间隔',
-                            child: TextFormField(
-                              key: ValueKey(
-                                'dtmf-idle-${store.data.dtmf.idleTime}',
-                              ),
-                              initialValue: '${store.data.dtmf.idleTime}',
-                              decoration: const InputDecoration(
-                                border: OutlineInputBorder(),
-                              ),
-                              keyboardType: TextInputType.number,
-                              onChanged: (value) => store.updateDtmf(
-                                (dtmf) =>
-                                    dtmf.idleTime = int.tryParse(value) ?? 1,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    SwitchListTile.adaptive(
-                      contentPadding: EdgeInsets.zero,
-                      value: showDtmfHelp,
-                      title: const Text('显示 DTMF 说明'),
-                      onChanged: (value) =>
-                          setState(() => showDtmfHelp = value),
-                    ),
-                    if (showDtmfHelp) ...[
-                      for (final topic in DemoData.dtmfHelp) ...[
-                        InfoCard(title: topic.title, detail: topic.detail),
-                        const SizedBox(height: 10),
-                      ],
-                    ],
-                    const SizedBox(height: 12),
-                    GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: store.data.dtmf.groups.length,
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            childAspectRatio: 2.5,
-                            crossAxisSpacing: 10,
-                            mainAxisSpacing: 10,
-                          ),
-                      itemBuilder: (context, index) {
-                        return FormFieldCard(
-                          title: store.data.dtmf.groupNames[index],
-                          compact: true,
-                          child: TextFormField(
-                            key: ValueKey(
-                              'dtmf-$index-${store.data.dtmf.groups[index]}',
-                            ),
-                            initialValue: store.data.dtmf.groups[index],
-                            decoration: const InputDecoration(
-                              border: OutlineInputBorder(),
-                              hintText: 'DTMF',
-                            ),
-                            onChanged: (value) => store.updateDtmf(
-                              (dtmf) => dtmf.groups[index] = value,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    ActionButton(
-                      label: '保存',
-                      icon: Icons.check_circle_rounded,
-                      primary: true,
-                      onPressed: store.saveDtmfSettings,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              PanelCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SectionHeader(
-                      title: 'FM 广播',
-                      subtitle: '把常听的广播台写进记忆位。',
-                    ),
-                    const SizedBox(height: 12),
-                    FormFieldCard(
-                      title: '当前频点',
-                      child: Row(
-                        children: [
-                          IconButton.filledTonal(
-                            tooltip: '减少 0.1 MHz',
-                            onPressed: () => store.stepFmCurrent(-1),
-                            icon: const Icon(Icons.remove_rounded),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: TextFormField(
-                              key: ValueKey(
-                                'fm-current-${store.data.fm.currentFreq}',
-                              ),
-                              initialValue: FmFrequency.formatDraft(
-                                store.data.fm.currentFreq,
-                              ),
-                              decoration: const InputDecoration(
-                                border: OutlineInputBorder(),
-                                hintText: '90.4',
-                                suffixText: 'MHz',
-                              ),
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                    decimal: true,
-                                  ),
-                              onChanged: store.setFmCurrentFromDraft,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          IconButton.filledTonal(
-                            tooltip: '增加 0.1 MHz',
-                            onPressed: () => store.stepFmCurrent(1),
-                            icon: const Icon(Icons.add_rounded),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '当前收音频率 ${FmFrequency.formatDraft(store.data.fm.currentFreq)} MHz',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    SwitchListTile.adaptive(
-                      contentPadding: EdgeInsets.zero,
-                      value: showFmHelp,
-                      title: const Text('显示 FM 说明'),
-                      onChanged: (value) => setState(() => showFmHelp = value),
-                    ),
-                    if (showFmHelp) ...[
-                      for (final topic in DemoData.fmHelp) ...[
-                        InfoCard(title: topic.title, detail: topic.detail),
-                        const SizedBox(height: 10),
-                      ],
-                    ],
-                    const SizedBox(height: 12),
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        final columns = constraints.maxWidth < 560 ? 2 : 3;
-                        return GridView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: store.data.fm.channels.length,
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: columns,
-                                childAspectRatio: columns == 2 ? 1.25 : 1.45,
-                                crossAxisSpacing: 10,
-                                mainAxisSpacing: 10,
-                              ),
-                          itemBuilder: (context, index) {
-                            final value = store.data.fm.channels[index];
-                            return FormFieldCard(
-                              title: '记忆 ${index + 1}',
-                              compact: true,
-                              child: Column(
-                                children: [
-                                  TextFormField(
-                                    key: ValueKey('fm-$index-$value'),
-                                    initialValue: FmFrequency.formatDraft(
-                                      value,
-                                    ),
-                                    decoration: const InputDecoration(
-                                      border: OutlineInputBorder(),
-                                      hintText: '88.7',
-                                      suffixText: 'MHz',
-                                    ),
-                                    keyboardType:
-                                        const TextInputType.numberWithOptions(
-                                          decimal: true,
-                                        ),
-                                    onChanged: (text) =>
-                                        store.setFmMemoryFromDraft(index, text),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      IconButton(
-                                        tooltip: '载入',
-                                        visualDensity: VisualDensity.compact,
-                                        onPressed: () =>
-                                            store.loadFmMemory(index),
-                                        icon: const Icon(
-                                          Icons.play_arrow_rounded,
-                                        ),
-                                      ),
-                                      IconButton(
-                                        tooltip: '保存当前频点',
-                                        visualDensity: VisualDensity.compact,
-                                        onPressed: () =>
-                                            store.saveCurrentFmToMemory(index),
-                                        icon: const Icon(
-                                          Icons.save_alt_rounded,
-                                        ),
-                                      ),
-                                      IconButton(
-                                        tooltip: '删除',
-                                        visualDensity: VisualDensity.compact,
-                                        onPressed: () =>
-                                            store.clearFmMemory(index),
-                                        icon: const Icon(
-                                          Icons.delete_outline_rounded,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    ActionButton(
-                      label: '保存',
-                      icon: Icons.check_circle_rounded,
-                      primary: true,
-                      onPressed: store.saveFmSettings,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              PanelCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SectionHeader(
-                      title: '开机图',
-                      subtitle: '图片选择、RGB565 转换和专用写图协议正在开发中。',
-                    ),
-                    const SizedBox(height: 12),
-                    const FormFieldCard(
-                      title: '状态',
-                      child: Row(
-                        children: [
-                          Icon(Icons.construction_rounded),
-                          SizedBox(width: 10),
-                          Expanded(child: Text('开发中，暂时不可写入开机图。')),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    HintTile(text: store.data.bootImage.previewNote),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              PanelCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SectionHeader(
-                      title: '备份与恢复',
-                      subtitle: '读频前和写频前都会自动留备份，这里也支持手动保存。',
-                    ),
-                    const SizedBox(height: 12),
-                    if (store.backups.isEmpty)
-                      const EmptyTile(
-                        title: '还没有备份',
-                        detail: '先点一次“手动备份”，就会在本机保留一个恢复点。',
-                      )
-                    else
-                      for (final snapshot in store.backups.take(6)) ...[
-                        BackupTile(
-                          snapshot: snapshot,
-                          onRestore: () => store.restoreBackup(snapshot.id),
-                          onDelete: () => store.deleteBackup(snapshot.id),
-                        ),
-                        const SizedBox(height: 10),
-                      ],
-                    const SizedBox(height: 10),
-                    ActionButton(
-                      label: '手动备份',
-                      icon: Icons.save_rounded,
-                      onPressed: () => store.createBackup('手动备份'),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              PanelCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SectionHeader(
-                      title: '通信日志',
-                      subtitle: '保留最近 300 行，调链路问题时很有用。',
-                    ),
-                    const SizedBox(height: 12),
-                    if (store.logs.isEmpty)
-                      const EmptyTile(
-                        title: '暂无日志',
-                        detail: '建立一次蓝牙连接或发一次握手包，日志就会开始积累。',
-                      )
-                    else
-                      for (final line in store.logs.take(18)) ...[
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          child: Text(
-                            line,
-                            style: const TextStyle(
-                              fontFamily: 'Menlo',
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                      ],
-                    if (store.logs.isNotEmpty) ...[
-                      const SizedBox(height: 10),
-                      ActionButton(
-                        label: '清空日志',
-                        icon: Icons.delete_outline_rounded,
-                        onPressed: store.clearLogs,
-                      ),
-                    ],
-                  ],
-                ),
-              ),
+              PaletteSelectorPanel(store: store),
             ],
           ),
         ),
@@ -3923,6 +3343,7 @@ class MobileStore extends ChangeNotifier {
   static const String bleCharacteristic =
       '0000FFE1-0000-1000-8000-00805F9B34FB';
   static const String backupKey = 'radio8800_mobile.backups';
+  static const String paletteKey = 'radio8800_mobile.palette';
   static const int maxBackupCount = 20;
 
   RadioAppData data = RadioAppData.defaults();
@@ -3933,7 +3354,7 @@ class MobileStore extends ChangeNotifier {
   final List<ImportedChannelDraft> importedDrafts = [];
   LinkState linkState = const LinkState.disconnected();
   NoticeMessage? notice;
-  AppUIMode uiMode = AppUIMode.basic;
+  AppPaletteKind paletteKind = AppPaletteKind.teal;
   int selectedBankIndex = 0;
   int selectedChannelIndex = 0;
   String importSourceText = '';
@@ -3982,15 +3403,19 @@ class MobileStore extends ChangeNotifier {
   }
 
   String get currentBankName => data.bankNames[selectedBankIndex];
+  AppPalette get palette => AppPalettes.byKind(paletteKind);
 
   Future<void> initialize() async {
+    await _loadPreferences();
     await _loadBackups();
     _log('应用已初始化');
     notifyListeners();
   }
 
-  void setUiMode(AppUIMode mode) {
-    uiMode = mode;
+  Future<void> setPaletteKind(AppPaletteKind kind) async {
+    paletteKind = kind;
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setString(paletteKey, kind.name);
     notifyListeners();
   }
 
@@ -4074,6 +3499,11 @@ class MobileStore extends ChangeNotifier {
     _success('已粘贴到 CH-${currentChannel.id}');
   }
 
+  void saveChannelSettings() {
+    data.updatedAt = DateTime.now();
+    _success('信道已保存到本地配置。要传输到机器，请回到总览页面写频。');
+  }
+
   void prepareNewChannelInCurrentBank() {
     final emptyIndex = currentBank.indexWhere(
       (channel) => !channel.visible || channel.rxFreq.trim().isEmpty,
@@ -4089,7 +3519,7 @@ class MobileStore extends ChangeNotifier {
     channelSearchText = '';
     showEmptyChannels = true;
     data.updatedAt = DateTime.now();
-    _success('已定位到 CH-${emptyIndex + 1}，填写接收频率后会参与写频');
+    _success('已新建 CH-${emptyIndex + 1} 空信道，点开后填写并保存到本地配置');
   }
 
   void insertEmptyChannelAfterSelection() {
@@ -5076,6 +4506,17 @@ class MobileStore extends ChangeNotifier {
     _rxSignal = null;
   }
 
+  Future<void> _loadPreferences() async {
+    final preferences = await SharedPreferences.getInstance();
+    final rawPalette = preferences.getString(paletteKey);
+    if (rawPalette != null) {
+      paletteKind = AppPaletteKind.values.firstWhere(
+        (kind) => kind.name == rawPalette,
+        orElse: () => AppPaletteKind.teal,
+      );
+    }
+  }
+
   Future<void> _loadBackups() async {
     final preferences = await SharedPreferences.getInstance();
     final raw = preferences.getString(backupKey);
@@ -5163,8 +4604,6 @@ class MobileStore extends ChangeNotifier {
   }
 }
 
-enum AppUIMode { basic, advanced }
-
 class LinkState {
   const LinkState._(this.label, this.isConnected);
 
@@ -5179,6 +4618,54 @@ class LinkState {
   final String label;
   final bool isConnected;
   bool get isBusy => !isConnected && label != '未连接';
+}
+
+enum AppPaletteKind { teal, blue, purple, orange }
+
+class AppPalette {
+  const AppPalette({
+    required this.kind,
+    required this.label,
+    required this.seed,
+    required this.scaffold,
+  });
+
+  final AppPaletteKind kind;
+  final String label;
+  final Color seed;
+  final Color scaffold;
+}
+
+class AppPalettes {
+  static const values = [
+    AppPalette(
+      kind: AppPaletteKind.teal,
+      label: '森海绿',
+      seed: Color(0xFF0F9D8A),
+      scaffold: Color(0xFFF4FBF9),
+    ),
+    AppPalette(
+      kind: AppPaletteKind.blue,
+      label: '电台蓝',
+      seed: Color(0xFF326BFF),
+      scaffold: Color(0xFFF4F7FF),
+    ),
+    AppPalette(
+      kind: AppPaletteKind.purple,
+      label: '夜航紫',
+      seed: Color(0xFF6D5BD0),
+      scaffold: Color(0xFFF7F4FF),
+    ),
+    AppPalette(
+      kind: AppPaletteKind.orange,
+      label: '暖光橙',
+      seed: Color(0xFFFF8A00),
+      scaffold: Color(0xFFFFF7EE),
+    ),
+  ];
+
+  static AppPalette byKind(AppPaletteKind kind) =>
+      values.firstWhere((palette) => palette.kind == kind);
 }
 
 class NoticeMessage {
@@ -7183,6 +6670,219 @@ class FmToolEditor extends StatelessWidget {
             icon: Icons.check_circle_rounded,
             primary: true,
             onPressed: store.saveFmSettings,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class BackupToolPanel extends StatelessWidget {
+  const BackupToolPanel({super.key, required this.store});
+
+  final MobileStore store;
+
+  @override
+  Widget build(BuildContext context) {
+    return PanelCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionHeader(
+            title: '备份与恢复',
+            subtitle: '读频前和写频前会自动留快照，也可以手动保存。',
+          ),
+          const SizedBox(height: 12),
+          if (store.backups.isEmpty)
+            const EmptyTile(title: '还没有备份', detail: '有有效信道后再手动备份，避免空数据把列表刷满。')
+          else
+            for (final snapshot in store.backups) ...[
+              BackupTile(
+                snapshot: snapshot,
+                onRestore: () => store.restoreBackup(snapshot.id),
+                onDelete: () => store.deleteBackup(snapshot.id),
+              ),
+              const SizedBox(height: 10),
+            ],
+          const SizedBox(height: 10),
+          ActionButton(
+            label: '手动备份',
+            icon: Icons.save_rounded,
+            onPressed: () => store.createBackup('手动备份'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class LogToolPanel extends StatelessWidget {
+  const LogToolPanel({super.key, required this.store});
+
+  final MobileStore store;
+
+  @override
+  Widget build(BuildContext context) {
+    return PanelCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionHeader(title: '通信日志', subtitle: '保留最近 300 行，调链路问题时很有用。'),
+          const SizedBox(height: 12),
+          if (store.logs.isEmpty)
+            const EmptyTile(title: '暂无日志', detail: '建立一次蓝牙连接或发一次握手包，日志就会开始积累。')
+          else
+            for (final line in store.logs) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Text(
+                  line,
+                  style: const TextStyle(fontFamily: 'Menlo', fontSize: 12),
+                ),
+              ),
+            ],
+          if (store.logs.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            ActionButton(
+              label: '清空日志',
+              icon: Icons.delete_outline_rounded,
+              onPressed: store.clearLogs,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class DiagnosticsToolPanel extends StatelessWidget {
+  const DiagnosticsToolPanel({super.key, required this.store});
+
+  final MobileStore store;
+
+  @override
+  Widget build(BuildContext context) {
+    return PanelCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionHeader(title: '通信诊断', subtitle: '底层握手由读频和写频流程自动处理。'),
+          const SizedBox(height: 12),
+          InfoStrip(title: '链路状态', detail: store.linkState.label),
+          const SizedBox(height: 8),
+          InfoStrip(title: '当前说明', detail: store.progressNote),
+          const SizedBox(height: 8),
+          InfoStrip(title: '最近操作', detail: store.lastOperation),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: ActionButton(
+                  label: '连接蓝牙',
+                  icon: Icons.bluetooth_searching_rounded,
+                  primary: true,
+                  onPressed: store.connectBluetooth,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ActionButton(
+                  label: '断开',
+                  icon: Icons.link_off_rounded,
+                  onPressed: store.disconnect,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class PaletteSelectorPanel extends StatelessWidget {
+  const PaletteSelectorPanel({super.key, required this.store});
+
+  final MobileStore store;
+
+  @override
+  Widget build(BuildContext context) {
+    return PanelCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionHeader(
+            title: '配色方案',
+            subtitle: '选择你看着最顺眼的一套颜色，设置会保存在本机。',
+          ),
+          const SizedBox(height: 12),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final columns = constraints.maxWidth < 560 ? 2 : 4;
+              return GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: AppPalettes.values.length,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: columns,
+                  childAspectRatio: columns == 2 ? 2.1 : 1.55,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                ),
+                itemBuilder: (context, index) {
+                  final palette = AppPalettes.values[index];
+                  final selected = store.paletteKind == palette.kind;
+                  return InkWell(
+                    onTap: () => store.setPaletteKind(palette.kind),
+                    borderRadius: BorderRadius.circular(16),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: palette.scaffold,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: selected
+                              ? palette.seed
+                              : const Color(0xFFE2EFEB),
+                          width: selected ? 2 : 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 28,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              color: palette.seed,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              palette.label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ),
+                          if (selected)
+                            Icon(
+                              Icons.check_circle_rounded,
+                              color: palette.seed,
+                              size: 20,
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
           ),
         ],
       ),
