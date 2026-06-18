@@ -55,6 +55,43 @@ class _Radio8800AppState extends State<Radio8800App> {
             ),
             useMaterial3: true,
             scaffoldBackgroundColor: const Color(0xFFF4FBF9),
+            cardTheme: const CardThemeData(
+              elevation: 0,
+              color: Colors.white,
+              surfaceTintColor: Colors.transparent,
+            ),
+            inputDecorationTheme: InputDecorationTheme(
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: Color(0xFFE1ECE8)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: Color(0xFFE1ECE8)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(
+                  color: Color(0xFF0F9D8A),
+                  width: 1.5,
+                ),
+              ),
+            ),
+            navigationBarTheme: NavigationBarThemeData(
+              elevation: 0,
+              backgroundColor: Colors.white.withValues(alpha: 0.96),
+              indicatorColor: const Color(0x1F0F9D8A),
+              labelTextStyle: WidgetStateProperty.resolveWith(
+                (states) => TextStyle(
+                  fontSize: 12,
+                  fontWeight: states.contains(WidgetState.selected)
+                      ? FontWeight.w800
+                      : FontWeight.w600,
+                ),
+              ),
+            ),
             textTheme: Theme.of(
               context,
             ).textTheme.apply(fontFamily: 'PingFang SC'),
@@ -66,7 +103,7 @@ class _Radio8800AppState extends State<Radio8800App> {
   }
 }
 
-enum RootTab { overview, channels, settings, tools, guide, about }
+enum RootTab { overview, channels, settings, tools }
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key, required this.store});
@@ -99,8 +136,6 @@ class _HomeShellState extends State<HomeShell> {
       ChannelsPage(store: widget.store),
       SettingsPage(store: widget.store),
       ToolsPage(store: widget.store),
-      GuidePage(store: widget.store),
-      const AboutPage(),
     ];
     final showStartup = !hasEnteredMain && !widget.store.linkState.isConnected;
 
@@ -145,16 +180,8 @@ class _HomeShellState extends State<HomeShell> {
                   label: '功能',
                 ),
                 NavigationDestination(
-                  icon: Icon(Icons.build_rounded),
-                  label: '工具',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.menu_book_rounded),
-                  label: '教程',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.info_outline_rounded),
-                  label: '关于',
+                  icon: Icon(Icons.grid_view_rounded),
+                  label: '更多',
                 ),
               ],
             ),
@@ -331,23 +358,35 @@ class OverviewPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final activeChannels = store.activeChannels;
 
     return CustomScrollView(
       slivers: [
-        SliverAppBar.large(
+        SliverAppBar(
           pinned: true,
           backgroundColor: Colors.transparent,
-          title: const Text('总览'),
+          centerTitle: true,
+          title: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.settings_input_antenna_rounded,
+                color: theme.colorScheme.primary,
+              ),
+              const SizedBox(width: 8),
+              const Text('8800Pro'),
+            ],
+          ),
         ),
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           sliver: SliverList.list(
             children: [
               if (store.notice != null) ...[
                 NoticeBanner(message: store.notice!),
                 const SizedBox(height: 16),
               ],
-              PanelCard(
+              HeroPanel(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -359,16 +398,17 @@ class OverviewPage extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '8800Pro 写频',
+                                '控制台',
                                 style: theme.textTheme.headlineMedium?.copyWith(
-                                  fontWeight: FontWeight.w800,
+                                  fontWeight: FontWeight.w900,
+                                  color: const Color(0xFF123B35),
                                 ),
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'Android 版和 iOS 版会保持同一套新手流程，把连接、读写、导入、备份和恢复集中到更顺手的路径里。',
+                                '连接设备、读写配置、管理信道与备份',
                                 style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: Colors.black54,
+                                  color: const Color(0xFF607570),
                                 ),
                               ),
                             ],
@@ -381,19 +421,55 @@ class OverviewPage extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
-                    InfoStrip(title: '当前进度', detail: store.progressNote),
-                    const SizedBox(height: 8),
-                    InfoStrip(title: '最近操作', detail: store.lastOperation),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 18),
+                    Container(height: 1, color: const Color(0xFFE2EFEB)),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: StatusMiniTile(
+                            title: store.currentBankName,
+                            subtitle: '当前分组',
+                            icon: Icons.rectangle_rounded,
+                            color: const Color(0xFF0F9D8A),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: StatusMiniTile(
+                            title: store.progressNote,
+                            subtitle: '当前状态',
+                            icon: Icons.timeline_rounded,
+                            color: const Color(0xFF326BFF),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              PanelCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SectionHeader(
+                      title: '快速操作',
+                      subtitle: '先连接，再读频；确认配置后再写频。',
+                    ),
+                    const SizedBox(height: 14),
                     Row(
                       children: [
                         Expanded(
                           child: ActionButton(
-                            label: '连接蓝牙',
-                            icon: Icons.bluetooth_searching_rounded,
+                            label: store.linkState.isConnected ? '断开' : '连接',
+                            icon: store.linkState.isConnected
+                                ? Icons.link_off_rounded
+                                : Icons.bluetooth_searching_rounded,
                             primary: true,
-                            onPressed: store.connectBluetooth,
+                            onPressed: store.linkState.isConnected
+                                ? store.disconnect
+                                : store.connectBluetooth,
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -414,36 +490,31 @@ class OverviewPage extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: MetricTile(
-                            title: '正在操作的分组',
-                            value: store.currentBankName,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: MetricTile(
-                            title: '已配信道',
-                            value: '${store.data.visibleChannelCount}',
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: MetricTile(
-                            title: '本地备份',
-                            value: '${store.backups.length}',
-                          ),
-                        ),
-                      ],
-                    ),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
-              ChannelManagementPanel(store: store),
+              Row(
+                children: [
+                  Expanded(
+                    child: BigMetricCard(
+                      title: '已配信道',
+                      value: '${store.data.visibleChannelCount}',
+                      icon: Icons.settings_input_antenna_rounded,
+                      color: const Color(0xFF0F9D8A),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: BigMetricCard(
+                      title: '本地备份',
+                      value: '${store.backups.length}',
+                      icon: Icons.folder_rounded,
+                      color: const Color(0xFF20A86B),
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 16),
               PanelCard(
                 child: Column(
@@ -454,10 +525,77 @@ class OverviewPage extends StatelessWidget {
                       subtitle: '第一次建议先读频，再改一条信道试写，确认没问题后再批量整理。',
                     ),
                     const SizedBox(height: 12),
-                    for (final step in DemoData.overviewSteps) ...[
-                      HintTile(text: step),
+                    for (
+                      var index = 0;
+                      index < DemoData.overviewSteps.length;
+                      index++
+                    ) ...[
+                      FlowStepTile(
+                        number: index + 1,
+                        text: DemoData.overviewSteps[index],
+                      ),
                       const SizedBox(height: 10),
                     ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              PanelCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SectionHeader(
+                      title: '当前信道操作',
+                      subtitle: '复制、剪切、插入和删除都会作用于当前选中的 CH。',
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ActionButton(
+                            label: '复制',
+                            icon: Icons.content_copy_rounded,
+                            onPressed: store.copyCurrentChannel,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: ActionButton(
+                            label: '剪切',
+                            icon: Icons.content_cut_rounded,
+                            onPressed: store.cutCurrentChannel,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: ActionButton(
+                            label: '粘贴',
+                            icon: Icons.content_paste_rounded,
+                            onPressed: store.pasteToCurrentChannel,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ActionButton(
+                            label: '插入空信道',
+                            icon: Icons.playlist_add_rounded,
+                            onPressed: store.insertEmptyChannelAfterSelection,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: ActionButton(
+                            label: '删除上移',
+                            icon: Icons.delete_sweep_rounded,
+                            onPressed: store.deleteCurrentChannelAndShift,
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -493,8 +631,8 @@ class OverviewPage extends StatelessWidget {
                         const SizedBox(width: 10),
                         Expanded(
                           child: JumpTile(
-                            title: '工具箱',
-                            icon: Icons.build_rounded,
+                            title: '更多',
+                            icon: Icons.grid_view_rounded,
                             color: const Color(0xFFFF8A00),
                             onTap: () => onJump(RootTab.tools),
                           ),
@@ -510,22 +648,30 @@ class OverviewPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     SectionHeader(
-                      title: '当前分组里的信道',
-                      subtitle: store.activeChannels.isEmpty
+                      title: '活跃信道',
+                      subtitle: activeChannels.isEmpty
                           ? '这个分组还没有可用信道。'
-                          : '先看一眼这组目前都写了什么。',
+                          : '当前区域里已经配置的前几条信道。',
                     ),
                     const SizedBox(height: 12),
-                    if (store.activeChannels.isEmpty)
+                    if (activeChannels.isEmpty)
                       const EmptyTile(
                         title: '还没有信道',
                         detail: '可以去信道页手动新建，也可以从中继台库或粘贴文本导入。',
                       )
                     else
-                      for (final channel in store.activeChannels.take(4)) ...[
+                      for (final channel in activeChannels.take(5)) ...[
                         ChannelTile(channel: channel),
                         const SizedBox(height: 10),
                       ],
+                    if (activeChannels.length > 5) ...[
+                      const SizedBox(height: 2),
+                      ActionButton(
+                        label: '查看全部 ${activeChannels.length} 条信道',
+                        icon: Icons.chevron_right_rounded,
+                        onPressed: () => onJump(RootTab.channels),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -535,14 +681,20 @@ class OverviewPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SectionHeader(
-                      title: '中继台速览',
-                      subtitle: '内置一些常用中继台，后面可以继续扩展。',
+                      title: '中继台库',
+                      subtitle: 'HamCQ 数据已内置到本机，进入信道页即可按地区选择。',
                     ),
                     const SizedBox(height: 12),
                     for (final repeater in store.repeaters.take(4)) ...[
                       RepeaterTile(repeater: repeater),
                       const SizedBox(height: 10),
                     ],
+                    ActionButton(
+                      label: '去信道页导入中继台',
+                      icon: Icons.cell_tower_rounded,
+                      primary: true,
+                      onPressed: () => onJump(RootTab.channels),
+                    ),
                   ],
                 ),
               ),
@@ -568,7 +720,7 @@ class ChannelsPage extends StatelessWidget {
         SliverAppBar.large(
           pinned: true,
           backgroundColor: Colors.transparent,
-          title: const Text('信道编辑'),
+          title: const Text('信道管理'),
           actions: [
             IconButton(
               tooltip: '中继台库',
@@ -604,11 +756,50 @@ class ChannelsPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     SectionHeader(
-                      title: '选择分组与信道',
+                      title: '当前区域',
                       subtitle:
-                          '当前分组：${store.currentBankName} · 显示 ${store.filteredChannels.length} / 64',
+                          '${store.selectedBankIndex + 1} · ${store.currentBankName} · ${store.filteredChannels.length} / 64',
                     ),
                     const SizedBox(height: 12),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 52,
+                          height: 52,
+                          decoration: BoxDecoration(
+                            color: const Color(0x1F0F9D8A),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Icon(
+                            Icons.rectangle_rounded,
+                            color: Color(0xFF0F9D8A),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                store.currentBankName,
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${store.activeChannels.length} 条有效信道，区域名称会跟随写频保存到机器。',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: const Color(0xFF607570),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
                     SegmentedButton<AppUIMode>(
                       segments: const [
                         ButtonSegment(
@@ -642,25 +833,76 @@ class ChannelsPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    ActionButton(
-                      label: '编辑区域名',
-                      icon: Icons.edit_rounded,
-                      onPressed: () => showDialog<void>(
-                        context: context,
-                        builder: (_) => BankNameEditorDialog(
-                          store: store,
-                          bankIndex: store.selectedBankIndex,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ActionButton(
+                            label: '编辑区域名',
+                            icon: Icons.edit_rounded,
+                            onPressed: () => showDialog<void>(
+                              context: context,
+                              builder: (_) => BankNameEditorDialog(
+                                store: store,
+                                bankIndex: store.selectedBankIndex,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: ActionButton(
+                            label: '整理区域',
+                            icon: Icons.cleaning_services_rounded,
+                            onPressed: store.compactCurrentBank,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ActionButton(
+                            label: '新建信道',
+                            icon: Icons.add_circle_outline_rounded,
+                            primary: true,
+                            onPressed: store.prepareNewChannelInCurrentBank,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: ActionButton(
+                            label: '中继台库',
+                            icon: Icons.cell_tower_rounded,
+                            onPressed: () => showModalBottomSheet<void>(
+                              context: context,
+                              isScrollControlled: true,
+                              builder: (_) => RepeaterSheet(store: store),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    ActionButton(
+                      label: '从剪贴板导入频率',
+                      icon: Icons.paste_rounded,
+                      onPressed: () async {
+                        await store.importFromClipboard();
+                        if (context.mounted) {
+                          showModalBottomSheet<void>(
+                            context: context,
+                            isScrollControlled: true,
+                            builder: (_) => ImportSheet(store: store),
+                          );
+                        }
+                      },
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       decoration: const InputDecoration(
                         prefixIcon: Icon(Icons.search_rounded),
                         hintText: '搜索信道号、名称、频率',
-                        border: OutlineInputBorder(),
-                        filled: true,
-                        fillColor: Colors.white,
                       ),
                       onChanged: store.setChannelSearchText,
                     ),
@@ -1553,12 +1795,164 @@ class _ToolsPageState extends State<ToolsPage> {
         const SliverAppBar.large(
           pinned: true,
           backgroundColor: Colors.transparent,
-          title: Text('工具'),
+          title: Text('更多'),
         ),
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
           sliver: SliverList.list(
             children: [
+              HeroPanel(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 58,
+                          height: 58,
+                          decoration: BoxDecoration(
+                            color: const Color(0x1F0F9D8A),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Icon(
+                            Icons.grid_view_rounded,
+                            color: Color(0xFF0F9D8A),
+                            size: 30,
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '更多工具',
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFF123B35),
+                                ),
+                              ),
+                              SizedBox(height: 6),
+                              Text(
+                                '高级写频、快照、日志、教程和项目信息集中放在这里。',
+                                style: TextStyle(
+                                  color: Color(0xFF607570),
+                                  height: 1.45,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    InfoStrip(title: '链路状态', detail: store.linkState.label),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: BigMetricCard(
+                      title: '有效信道',
+                      value: '${store.data.visibleChannelCount}',
+                      icon: Icons.list_alt_rounded,
+                      color: const Color(0xFF0F9D8A),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: BigMetricCard(
+                      title: '快照',
+                      value: '${store.backups.length}',
+                      icon: Icons.history_rounded,
+                      color: const Color(0xFF20A86B),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              PanelCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SectionHeader(
+                      title: '高级写频',
+                      subtitle: 'VFO、DTMF、FM 与开机图都放在这里集中处理。',
+                    ),
+                    const SizedBox(height: 12),
+                    ToolShortcutGrid(
+                      items: [
+                        ToolShortcutItem(
+                          title: 'VFO 频率',
+                          icon: Icons.waves_rounded,
+                          color: const Color(0xFF0F9D8A),
+                        ),
+                        ToolShortcutItem(
+                          title: 'DTMF 编码',
+                          icon: Icons.dialpad_rounded,
+                          color: const Color(0xFF326BFF),
+                        ),
+                        ToolShortcutItem(
+                          title: 'FM 收音',
+                          icon: Icons.radio_rounded,
+                          color: const Color(0xFFFF8A00),
+                        ),
+                        ToolShortcutItem(
+                          title: '开机图',
+                          subtitle: '开发中',
+                          icon: Icons.photo_rounded,
+                          color: const Color(0xFF6D5BD0),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              PanelCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SectionHeader(
+                      title: '帮助与说明',
+                      subtitle: '教程和关于不再占主导航，从这里进入。',
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ActionButton(
+                            label: '新手教程',
+                            icon: Icons.menu_book_rounded,
+                            onPressed: () => showModalBottomSheet<void>(
+                              context: context,
+                              isScrollControlled: true,
+                              builder: (_) => const GuideSheet(),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: ActionButton(
+                            label: '关于项目',
+                            icon: Icons.info_outline_rounded,
+                            onPressed: () => showModalBottomSheet<void>(
+                              context: context,
+                              isScrollControlled: true,
+                              builder: (_) => const AboutSheet(),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
               PanelCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -5354,6 +5748,389 @@ class EmptyTile extends StatelessWidget {
           const SizedBox(height: 6),
           Text(detail, style: const TextStyle(color: Colors.black54)),
         ],
+      ),
+    );
+  }
+}
+
+class HeroPanel extends StatelessWidget {
+  const HeroPanel({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.94),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFE2EFEB)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F9D8A).withValues(alpha: 0.08),
+            blurRadius: 28,
+            offset: const Offset(0, 14),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+}
+
+class StatusMiniTile extends StatelessWidget {
+  const StatusMiniTile({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+  });
+
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7FBFA),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE7F1EE)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: const TextStyle(fontSize: 12, color: Colors.black54),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class BigMetricCard extends StatelessWidget {
+  const BigMetricCard({
+    super.key,
+    required this.title,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
+
+  final String title;
+  final String value;
+  final IconData icon;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFE2EFEB)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color),
+          const SizedBox(height: 12),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 4),
+          Text(title, style: const TextStyle(color: Colors.black54)),
+        ],
+      ),
+    );
+  }
+}
+
+class FlowStepTile extends StatelessWidget {
+  const FlowStepTile({super.key, required this.number, required this.text});
+
+  final int number;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 26,
+          height: 26,
+          alignment: Alignment.center,
+          decoration: const BoxDecoration(
+            shape: BoxShape.circle,
+            color: Color(0xFF0F9D8A),
+          ),
+          child: Text(
+            '$number',
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+              fontSize: 12,
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 3),
+            child: Text(text, style: const TextStyle(height: 1.35)),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class ToolShortcutItem {
+  const ToolShortcutItem({
+    required this.title,
+    required this.icon,
+    required this.color,
+    this.subtitle = '下方编辑',
+  });
+
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+}
+
+class ToolShortcutGrid extends StatelessWidget {
+  const ToolShortcutGrid({super.key, required this.items});
+
+  final List<ToolShortcutItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth < 520 ? 2 : 4;
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: items.length,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: columns,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+            childAspectRatio: columns == 2 ? 1.16 : 1.1,
+          ),
+          itemBuilder: (context, index) {
+            final item = items[index];
+            return Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FCFB),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: const Color(0xFFE7F1EE)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(item.icon, color: item.color),
+                  const Spacer(),
+                  Text(
+                    item.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    item.subtitle,
+                    style: const TextStyle(fontSize: 12, color: Colors.black54),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class GuideSheet extends StatelessWidget {
+  const GuideSheet({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.86,
+        minChildSize: 0.6,
+        maxChildSize: 0.96,
+        builder: (context, controller) {
+          return Material(
+            color: const Color(0xFFF4FBF9),
+            child: ListView(
+              controller: controller,
+              padding: const EdgeInsets.all(16),
+              children: [
+                const SheetHeader(
+                  title: '新手教程',
+                  subtitle: '读频、写频、区域和信道的基础概念说明。',
+                ),
+                const SizedBox(height: 12),
+                PanelCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SectionHeader(
+                        title: '核心概念',
+                        subtitle: '先看这些，再进信道编辑会轻松很多。',
+                      ),
+                      const SizedBox(height: 12),
+                      for (final item in DemoData.guideConcepts) ...[
+                        InfoCard(title: item.$1, detail: item.$2),
+                        const SizedBox(height: 10),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                PanelCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SectionHeader(
+                        title: '功能导览',
+                        subtitle: '移动端和网页端保持一致的功能结构。',
+                      ),
+                      const SizedBox(height: 12),
+                      for (final item in DemoData.featureCards) ...[
+                        InfoCard(title: item.$1, detail: item.$2),
+                        const SizedBox(height: 10),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class AboutSheet extends StatelessWidget {
+  const AboutSheet({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.86,
+        minChildSize: 0.6,
+        maxChildSize: 0.96,
+        builder: (context, controller) {
+          return Material(
+            color: const Color(0xFFF4FBF9),
+            child: ListView(
+              controller: controller,
+              padding: const EdgeInsets.all(16),
+              children: [
+                const SheetHeader(
+                  title: '关于项目',
+                  subtitle: '8800Pro 写频工具 · 制作：BG7OWW',
+                ),
+                const SizedBox(height: 12),
+                PanelCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        '本项目旨在通过网页、iOS 与 Android 端，让 8800Pro 的读频、写频、信道整理和中继台导入变得更直观。移动端 UI 会持续对齐 iOS 版，底层协议则沿用网页端已经验证过的蓝牙链路。',
+                      ),
+                      const SizedBox(height: 12),
+                      const Text('如果有任何问题，请联系：andyxecm@gmail.com'),
+                      const SizedBox(height: 20),
+                      const Text(
+                        '免责声明',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        '本软件仅供技术交流和个人学习使用。任何个人或组织在使用本软件时必须遵守中华人民共和国相关法律法规及无线电管理条例。数据无价，写频前请保留备份。',
+                      ),
+                      const SizedBox(height: 20),
+                      const Text(
+                        '更新日志',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      for (final log in DemoData.updateLogs) ...[
+                        Text(
+                          '${log.version} · ${log.title}',
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          log.detail,
+                          style: const TextStyle(color: Colors.black54),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+                      TextButton.icon(
+                        onPressed: AboutPage.launchGitHub,
+                        icon: const Icon(Icons.link_rounded),
+                        label: const Text('复制开源项目链接'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
