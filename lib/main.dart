@@ -1413,326 +1413,392 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget build(BuildContext context) {
     return CustomScrollView(
       slivers: [
-        const SliverAppBar.large(
+        const SliverAppBar(
           pinned: true,
           backgroundColor: Colors.transparent,
-          title: Text('功能设置'),
+          centerTitle: true,
+          title: Text('功能'),
         ),
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
           sliver: SliverList.list(
             children: [
-              SettingsCard(
-                title: '双段与显示',
-                subtitle: '这组设置最容易影响“为什么机器里看不到刚写进去的信道”。',
+              SettingsHeroPanel(store: store),
+              const SizedBox(height: 16),
+              SettingsSectionPanel(
+                title: '通道与显示',
+                subtitle: '控制 A/B 通道展示方式、当前区域和背光逻辑。',
+                icon: Icons.swap_horiz_rounded,
+                color: const Color(0xFF0F9D8A),
                 children: [
-                  indexedField(
-                    'A 分组',
-                    store.data.functions.currentBankA,
-                    store.data.bankNames,
-                    (value) =>
-                        store.updateFunction((f) => f.currentBankA = value),
-                  ),
-                  indexedField(
-                    'B 分组',
-                    store.data.functions.currentBankB,
-                    store.data.bankNames,
-                    (value) =>
-                        store.updateFunction((f) => f.currentBankB = value),
-                  ),
-                  indexedField(
-                    'A 工作模式',
-                    store.data.functions.chAWorkmode,
-                    RadioChoices.workMode,
-                    (value) =>
-                        store.updateFunction((f) => f.chAWorkmode = value),
-                  ),
-                  indexedField(
-                    'B 工作模式',
-                    store.data.functions.chBWorkmode,
-                    RadioChoices.workMode,
-                    (value) =>
-                        store.updateFunction((f) => f.chBWorkmode = value),
-                  ),
-                  indexedField(
-                    'A 显示',
-                    store.data.functions.chADisplay,
-                    RadioChoices.displayMode,
-                    (value) =>
+                  settingMenu(
+                    title: 'A 通道显示',
+                    subtitle: '屏幕上方主通道显示内容',
+                    icon: Icons.looks_one_rounded,
+                    color: const Color(0xFF0F9D8A),
+                    value: store.data.functions.chADisplay,
+                    options: RadioChoices.displayMode,
+                    onChanged: (value) =>
                         store.updateFunction((f) => f.chADisplay = value),
                   ),
-                  indexedField(
-                    'B 显示',
-                    store.data.functions.chBDisplay,
-                    RadioChoices.displayMode,
-                    (value) =>
+                  settingMenu(
+                    title: 'B 通道显示',
+                    subtitle: '副通道显示内容',
+                    icon: Icons.looks_two_rounded,
+                    color: const Color(0xFF0F9D8A),
+                    value: store.data.functions.chBDisplay,
+                    options: RadioChoices.displayMode,
+                    onChanged: (value) =>
                         store.updateFunction((f) => f.chBDisplay = value),
                   ),
+                  settingMenu(
+                    title: 'A 当前区域',
+                    subtitle: 'A 通道默认使用的信道组',
+                    icon: Icons.rectangle_rounded,
+                    color: const Color(0xFF326BFF),
+                    value: store.data.functions.currentBankA,
+                    options: bankOptions,
+                    onChanged: (value) =>
+                        store.updateFunction((f) => f.currentBankA = value),
+                  ),
+                  settingMenu(
+                    title: 'B 当前区域',
+                    subtitle: 'B 通道默认使用的信道组',
+                    icon: Icons.rectangle_outlined,
+                    color: const Color(0xFF326BFF),
+                    value: store.data.functions.currentBankB,
+                    options: bankOptions,
+                    onChanged: (value) =>
+                        store.updateFunction((f) => f.currentBankB = value),
+                  ),
+                  settingMenu(
+                    title: '背光时长',
+                    subtitle: '按键或收发后的屏幕点亮时间',
+                    icon: Icons.wb_sunny_rounded,
+                    color: const Color(0xFFFF8A00),
+                    value: store.data.functions.backlight,
+                    options: RadioChoices.backlight,
+                    onChanged: (value) =>
+                        store.updateFunction((f) => f.backlight = value),
+                  ),
+                  settingMenu(
+                    title: '开机显示',
+                    subtitle: '开机时显示的界面类型',
+                    icon: Icons.power_settings_new_rounded,
+                    color: const Color(0xFF6D5BD0),
+                    value: store.data.functions.powerOnDisplay,
+                    options: RadioChoices.powerOnDisplay,
+                    onChanged: (value) =>
+                        store.updateFunction((f) => f.powerOnDisplay = value),
+                  ),
                 ],
               ),
               const SizedBox(height: 16),
-              SettingsCard(
-                title: '整机行为',
-                subtitle: '静噪、扫描、提示音、双守、自动锁这些都在这里。',
+              SettingsSectionPanel(
+                title: '音频与收发',
+                subtitle: '静噪、VOX、麦克风增益和蓝牙音频都集中在这里。',
+                icon: Icons.volume_up_rounded,
+                color: const Color(0xFF5C6BC0),
                 children: [
-                  indexedField(
-                    '静噪等级',
-                    store.data.functions.sql,
-                    RadioChoices.level,
-                    (value) => store.updateFunction((f) => f.sql = value),
+                  settingMenu(
+                    title: '静噪等级',
+                    subtitle: '越高越不容易被弱信号打开',
+                    icon: Icons.graphic_eq_rounded,
+                    color: const Color(0xFF5C6BC0),
+                    value: store.data.functions.sql,
+                    options: RadioChoices.level,
+                    onChanged: (value) =>
+                        store.updateFunction((f) => f.sql = value),
                   ),
-                  indexedField(
-                    '省电模式',
-                    store.data.functions.saveMode,
-                    RadioChoices.saveMode,
-                    (value) => store.updateFunction((f) => f.saveMode = value),
+                  settingMenu(
+                    title: 'VOX 灵敏度',
+                    subtitle: '声控发射触发强度',
+                    icon: Icons.mic_rounded,
+                    color: const Color(0xFF5C6BC0),
+                    value: store.data.functions.vox,
+                    options: RadioChoices.level,
+                    onChanged: (value) =>
+                        store.updateFunction((f) => f.vox = value),
                   ),
-                  indexedField(
-                    'VOX 灵敏度',
-                    store.data.functions.vox,
-                    RadioChoices.level,
-                    (value) => store.updateFunction((f) => f.vox = value),
+                  settingMenu(
+                    title: 'VOX 延迟',
+                    subtitle: '声控发射松开后的保持时间',
+                    icon: Icons.timer_rounded,
+                    color: const Color(0xFF5C6BC0),
+                    value: store.data.functions.voxDelay,
+                    options: RadioChoices.delay16,
+                    onChanged: (value) =>
+                        store.updateFunction((f) => f.voxDelay = value),
                   ),
-                  indexedField(
-                    'VOX 延迟',
-                    store.data.functions.voxDelay,
-                    RadioChoices.delay16,
-                    (value) => store.updateFunction((f) => f.voxDelay = value),
+                  settingMenu(
+                    title: '麦克风增益',
+                    subtitle: '本机麦克风输入增益',
+                    icon: Icons.settings_voice_rounded,
+                    color: const Color(0xFF5C6BC0),
+                    value: store.data.functions.micGain,
+                    options: const ['低', '中', '高'],
+                    onChanged: (value) =>
+                        store.updateFunction((f) => f.micGain = value),
                   ),
-                  indexedField(
-                    '背光时间',
-                    store.data.functions.backlight,
-                    RadioChoices.backlight,
-                    (value) => store.updateFunction((f) => f.backlight = value),
+                  settingMenu(
+                    title: '蓝牙麦克风',
+                    subtitle: '蓝牙麦克风输入增益',
+                    icon: Icons.bluetooth_audio_rounded,
+                    color: const Color(0xFF00A6C8),
+                    value: store.data.functions.bluetoothMicGain,
+                    options: RadioChoices.bluetoothGain,
+                    onChanged: (value) =>
+                        store.updateFunction((f) => f.bluetoothMicGain = value),
                   ),
-                  indexedField(
-                    '双守',
-                    store.data.functions.dualStandby,
-                    RadioChoices.onOff,
-                    (value) =>
+                  settingMenu(
+                    title: '蓝牙音频',
+                    subtitle: '蓝牙耳机/音箱输出增益',
+                    icon: Icons.headphones_rounded,
+                    color: const Color(0xFF00A6C8),
+                    value: store.data.functions.bluetoothAudioGain,
+                    options: RadioChoices.bluetoothGain,
+                    onChanged: (value) => store.updateFunction(
+                      (f) => f.bluetoothAudioGain = value,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              SettingsSectionPanel(
+                title: '工作模式',
+                subtitle: '决定双守、信道/频率模式、省电和扫描策略。',
+                icon: Icons.settings_suggest_rounded,
+                color: const Color(0xFF20A86B),
+                children: [
+                  settingSegmented(
+                    title: '双守',
+                    subtitle: '同时监听 A/B 两个通道',
+                    icon: Icons.sync_alt_rounded,
+                    color: const Color(0xFF20A86B),
+                    value: store.data.functions.dualStandby,
+                    options: RadioChoices.onOff,
+                    onChanged: (value) =>
                         store.updateFunction((f) => f.dualStandby = value),
                   ),
-                  indexedField(
-                    '提示音',
-                    store.data.functions.beep,
-                    RadioChoices.onOff,
-                    (value) => store.updateFunction((f) => f.beep = value),
+                  settingMenu(
+                    title: 'A 工作模式',
+                    subtitle: 'A 通道使用信道或 VFO',
+                    icon: Icons.filter_1_rounded,
+                    color: const Color(0xFF20A86B),
+                    value: store.data.functions.chAWorkmode,
+                    options: RadioChoices.workMode,
+                    onChanged: (value) =>
+                        store.updateFunction((f) => f.chAWorkmode = value),
                   ),
-                  indexedField(
-                    '语音提示',
-                    store.data.functions.voice,
-                    RadioChoices.onOff,
-                    (value) => store.updateFunction((f) => f.voice = value),
+                  settingMenu(
+                    title: 'B 工作模式',
+                    subtitle: 'B 通道使用信道或 VFO',
+                    icon: Icons.filter_2_rounded,
+                    color: const Color(0xFF20A86B),
+                    value: store.data.functions.chBWorkmode,
+                    options: RadioChoices.workMode,
+                    onChanged: (value) =>
+                        store.updateFunction((f) => f.chBWorkmode = value),
                   ),
-                  indexedField(
-                    '自动锁',
-                    store.data.functions.autoLock,
-                    RadioChoices.autoLock,
-                    (value) => store.updateFunction((f) => f.autoLock = value),
+                  settingMenu(
+                    title: '扫描模式',
+                    subtitle: '扫描暂停和继续的规则',
+                    icon: Icons.center_focus_strong_rounded,
+                    color: const Color(0xFF20A86B),
+                    value: store.data.functions.scanMode,
+                    options: RadioChoices.scanMode,
+                    onChanged: (value) =>
+                        store.updateFunction((f) => f.scanMode = value),
                   ),
-                  indexedField(
-                    '扫描模式',
-                    store.data.functions.scanMode,
-                    RadioChoices.scanMode,
-                    (value) => store.updateFunction((f) => f.scanMode = value),
+                  settingMenu(
+                    title: '省电模式',
+                    subtitle: '待机时降低耗电',
+                    icon: Icons.battery_saver_rounded,
+                    color: const Color(0xFF20A86B),
+                    value: store.data.functions.saveMode,
+                    options: RadioChoices.saveMode,
+                    onChanged: (value) =>
+                        store.updateFunction((f) => f.saveMode = value),
                   ),
-                  indexedField(
-                    '发射限时',
-                    store.data.functions.tot,
-                    RadioChoices.tot,
-                    (value) => store.updateFunction((f) => f.tot = value),
-                  ),
-                  indexedField(
-                    'FM 收音',
-                    store.data.functions.fmEnable,
-                    RadioChoices.onOff,
-                    (value) => store.updateFunction((f) => f.fmEnable = value),
-                  ),
-                  indexedField(
-                    '麦克风增益',
-                    store.data.functions.micGain,
-                    const ['低', '中', '高'],
-                    (value) => store.updateFunction((f) => f.micGain = value),
+                  settingMenu(
+                    title: '自动锁键',
+                    subtitle: '闲置后自动锁定键盘',
+                    icon: Icons.lock_rounded,
+                    color: const Color(0xFF20A86B),
+                    value: store.data.functions.autoLock,
+                    options: RadioChoices.autoLock,
+                    onChanged: (value) =>
+                        store.updateFunction((f) => f.autoLock = value),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
-              SettingsCard(
-                title: '提示、尾音与按键',
-                subtitle: 'PTT 延迟、Roger 音、尾音消除和侧键功能会随功能块一起写入。',
+              SettingsSectionPanel(
+                title: '提示与按键',
+                subtitle: '控制提示音、尾音、PTT 延迟和自定义按键。',
+                icon: Icons.keyboard_rounded,
+                color: const Color(0xFFFF8A00),
                 children: [
-                  indexedField(
-                    'PTT 延迟',
-                    store.data.functions.pttDelay,
-                    RadioChoices.delay16,
-                    (value) => store.updateFunction((f) => f.pttDelay = value),
+                  settingSegmented(
+                    title: '语音提示',
+                    subtitle: '菜单与操作语音播报',
+                    icon: Icons.record_voice_over_rounded,
+                    color: const Color(0xFFFF8A00),
+                    value: store.data.functions.voice,
+                    options: RadioChoices.onOff,
+                    onChanged: (value) =>
+                        store.updateFunction((f) => f.voice = value),
                   ),
-                  indexedField(
-                    '侧音',
-                    store.data.functions.sideTone,
-                    RadioChoices.sideTone,
-                    (value) => store.updateFunction((f) => f.sideTone = value),
+                  settingSegmented(
+                    title: '按键音',
+                    subtitle: '按键反馈声音',
+                    icon: Icons.volume_mute_rounded,
+                    color: const Color(0xFFFF8A00),
+                    value: store.data.functions.beep,
+                    options: RadioChoices.onOff,
+                    onChanged: (value) =>
+                        store.updateFunction((f) => f.beep = value),
                   ),
-                  indexedField(
-                    '尾音消除',
-                    store.data.functions.tailClear,
-                    RadioChoices.onOff,
-                    (value) => store.updateFunction((f) => f.tailClear = value),
+                  settingMenu(
+                    title: 'PTT 延迟',
+                    subtitle: '按下 PTT 后的发射延迟',
+                    icon: Icons.touch_app_rounded,
+                    color: const Color(0xFFFF8A00),
+                    value: store.data.functions.pttDelay,
+                    options: RadioChoices.delay16,
+                    onChanged: (value) =>
+                        store.updateFunction((f) => f.pttDelay = value),
                   ),
-                  indexedField(
-                    '中继尾音消除',
-                    store.data.functions.rptTailClear,
-                    RadioChoices.rptTail,
-                    (value) =>
+                  settingSegmented(
+                    title: 'Roger 音',
+                    subtitle: '发射结束提示音',
+                    icon: Icons.check_circle_rounded,
+                    color: const Color(0xFFFF8A00),
+                    value: store.data.functions.roger,
+                    options: RadioChoices.onOff,
+                    onChanged: (value) =>
+                        store.updateFunction((f) => f.roger = value),
+                  ),
+                  settingMenu(
+                    title: '中继尾音消除',
+                    subtitle: '发射结束后的静噪尾音处理',
+                    icon: Icons.settings_input_antenna_rounded,
+                    color: const Color(0xFFFF8A00),
+                    value: store.data.functions.rptTailClear,
+                    options: RadioChoices.rptTail,
+                    onChanged: (value) =>
                         store.updateFunction((f) => f.rptTailClear = value),
                   ),
-                  indexedField(
-                    '中继尾音检测',
-                    store.data.functions.rptTailDetect,
-                    RadioChoices.rptTail,
-                    (value) =>
-                        store.updateFunction((f) => f.rptTailDetect = value),
-                  ),
-                  indexedField(
-                    'Roger 音',
-                    store.data.functions.roger,
-                    RadioChoices.onOff,
-                    (value) => store.updateFunction((f) => f.roger = value),
-                  ),
-                  indexedField(
-                    '键盘锁',
-                    store.data.functions.keyLock,
-                    RadioChoices.onOff,
-                    (value) => store.updateFunction((f) => f.keyLock = value),
-                  ),
-                  indexedField(
-                    '提示音类型',
-                    store.data.functions.tone,
-                    RadioChoices.tone,
-                    (value) => store.updateFunction((f) => f.tone = value),
-                  ),
-                  indexedField(
-                    '菜单退出',
-                    store.data.functions.menuQuitTime,
-                    RadioChoices.menuQuitTime,
-                    (value) =>
-                        store.updateFunction((f) => f.menuQuitTime = value),
-                  ),
-                  indexedField(
-                    '开机延迟',
-                    store.data.functions.powerOnDelay,
-                    RadioChoices.powerOnDelay,
-                    (value) =>
-                        store.updateFunction((f) => f.powerOnDelay = value),
-                  ),
-                  indexedField(
-                    'VOX 开关',
-                    store.data.functions.voxSwitch,
-                    RadioChoices.onOff,
-                    (value) => store.updateFunction((f) => f.voxSwitch = value),
-                  ),
-                  indexedField(
-                    '本地 SOS 音',
-                    store.data.functions.localSosTone,
-                    RadioChoices.onOff,
-                    (value) =>
-                        store.updateFunction((f) => f.localSosTone = value),
-                  ),
-                  indexedField(
-                    '报警模式',
-                    store.data.functions.alarmMode,
-                    RadioChoices.alarmMode,
-                    (value) => store.updateFunction((f) => f.alarmMode = value),
-                  ),
-                  indexedField(
-                    '侧键短按',
-                    store.data.functions.key2Short,
-                    RadioChoices.keyAction,
-                    (value) => store.updateFunction((f) => f.key2Short = value),
-                  ),
-                  indexedField(
-                    '侧键长按',
-                    store.data.functions.key2Long,
-                    RadioChoices.keyAction,
-                    (value) => store.updateFunction((f) => f.key2Long = value),
+                  settingMenu(
+                    title: '短按侧键',
+                    subtitle: '侧键短按功能',
+                    icon: Icons.smart_button_rounded,
+                    color: const Color(0xFFFF8A00),
+                    value: store.data.functions.key2Short,
+                    options: RadioChoices.keyAction,
+                    onChanged: (value) =>
+                        store.updateFunction((f) => f.key2Short = value),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
-              PanelCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SectionHeader(
-                      title: '开机与蓝牙',
-                      subtitle: '把设备名、开机显示和蓝牙收音参数先整理好。',
-                    ),
-                    const SizedBox(height: 12),
-                    indexedField(
-                      '开机显示',
-                      store.data.functions.powerOnDisplay,
-                      RadioChoices.powerOnDisplay,
-                      (value) =>
-                          store.updateFunction((f) => f.powerOnDisplay = value),
-                    ),
-                    const SizedBox(height: 10),
-                    indexedField(
-                      '蓝牙音量',
-                      store.data.functions.bluetoothAudioGain,
-                      RadioChoices.bluetoothGain,
-                      (value) => store.updateFunction(
-                        (f) => f.bluetoothAudioGain = value,
+              SettingsSectionPanel(
+                title: '补充设置',
+                subtitle: '这些项目不常改，但仍会随 0x9000 功能块保存。',
+                icon: Icons.more_horiz_rounded,
+                color: const Color(0xFF6D5BD0),
+                children: [
+                  settingMenu(
+                    title: '发射限时',
+                    subtitle: '限制单次连续发射时间',
+                    icon: Icons.hourglass_bottom_rounded,
+                    color: const Color(0xFF6D5BD0),
+                    value: store.data.functions.tot,
+                    options: RadioChoices.tot,
+                    onChanged: (value) =>
+                        store.updateFunction((f) => f.tot = value),
+                  ),
+                  settingMenu(
+                    title: 'FM 收音',
+                    subtitle: '打开或关闭 FM 收音功能',
+                    icon: Icons.radio_rounded,
+                    color: const Color(0xFF6D5BD0),
+                    value: store.data.functions.fmEnable,
+                    options: RadioChoices.onOff,
+                    onChanged: (value) =>
+                        store.updateFunction((f) => f.fmEnable = value),
+                  ),
+                  settingMenu(
+                    title: '菜单退出',
+                    subtitle: '菜单闲置自动退出时间',
+                    icon: Icons.exit_to_app_rounded,
+                    color: const Color(0xFF6D5BD0),
+                    value: store.data.functions.menuQuitTime,
+                    options: RadioChoices.menuQuitTime,
+                    onChanged: (value) =>
+                        store.updateFunction((f) => f.menuQuitTime = value),
+                  ),
+                  settingMenu(
+                    title: '报警模式',
+                    subtitle: '本机报警触发后的处理方式',
+                    icon: Icons.warning_amber_rounded,
+                    color: const Color(0xFF6D5BD0),
+                    value: store.data.functions.alarmMode,
+                    options: RadioChoices.alarmMode,
+                    onChanged: (value) =>
+                        store.updateFunction((f) => f.alarmMode = value),
+                  ),
+                  SettingTextTile(
+                    title: '呼号 / 备注',
+                    subtitle: '用于开机显示或本地备注',
+                    icon: Icons.badge_rounded,
+                    color: const Color(0xFF6D5BD0),
+                    initialValue: store.data.functions.callSign,
+                    hint: '例：BG7OWW',
+                    onChanged: store.setCallSign,
+                  ),
+                  SettingHelpTile(
+                    showHelp: showHelp,
+                    onChanged: (value) => setState(() => showHelp = value),
+                  ),
+                ],
+              ),
+              if (showHelp) ...[
+                const SizedBox(height: 16),
+                PanelCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SectionHeader(
+                        title: '设置说明',
+                        subtitle: '这些说明来自实际写频参数和常见使用场景。',
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    indexedField(
-                      '蓝牙麦克风',
-                      store.data.functions.bluetoothMicGain,
-                      RadioChoices.bluetoothGain,
-                      (value) => store.updateFunction(
-                        (f) => f.bluetoothMicGain = value,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    FormFieldCard(
-                      title: '呼号 / 备注',
-                      child: TextFormField(
-                        key: ValueKey(
-                          'callsign-${store.data.functions.callSign}',
-                        ),
-                        initialValue: store.data.functions.callSign,
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                          hintText: '例：BG7OWW',
-                        ),
-                        onChanged: store.setCallSign,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    SwitchListTile.adaptive(
-                      contentPadding: EdgeInsets.zero,
-                      value: showHelp,
-                      title: const Text('显示这些设置的解释'),
-                      onChanged: (value) => setState(() => showHelp = value),
-                    ),
-                    if (showHelp) ...[
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 12),
                       for (final topic in DemoData.settingsHelp) ...[
                         InfoCard(title: topic.title, detail: topic.detail),
                         const SizedBox(height: 10),
                       ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
+              ],
               const SizedBox(height: 16),
-              PanelCard(
+              HeroPanel(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SectionHeader(
-                      title: '保存功能设置',
-                      subtitle: '这里只保存到当前配置；要传输到机器，请回到总览页面点击写频。',
+                    const Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.save_alt_rounded, color: Color(0xFF20A86B)),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: SectionHeader(
+                            title: '保存功能设置',
+                            subtitle: '这里只保存到当前配置；要传输到机器，请回到总览页面点击写频。',
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 12),
                     ActionButton(
@@ -1751,26 +1817,518 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Widget indexedField(
-    String title,
-    int value,
-    List<String> options,
-    ValueChanged<int> onChanged,
-  ) {
-    return FormFieldCard(
+  List<String> get bankOptions => store.data.bankNames
+      .asMap()
+      .entries
+      .map((entry) => '${entry.key + 1} · ${entry.value}')
+      .toList();
+
+  Widget settingMenu({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required int value,
+    required List<String> options,
+    required ValueChanged<int> onChanged,
+  }) {
+    return SettingMenuTile(
       title: title,
-      child: DropdownButtonFormField<int>(
-        initialValue: value.clamp(0, options.length - 1).toInt(),
-        decoration: const InputDecoration(border: OutlineInputBorder()),
-        items: List.generate(
-          options.length,
-          (index) =>
-              DropdownMenuItem<int>(value: index, child: Text(options[index])),
-        ),
-        onChanged: (next) => onChanged(next ?? 0),
+      subtitle: subtitle,
+      icon: icon,
+      color: color,
+      value: value,
+      options: options,
+      onChanged: onChanged,
+    );
+  }
+
+  Widget settingSegmented({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required int value,
+    required List<String> options,
+    required ValueChanged<int> onChanged,
+  }) {
+    return SettingSegmentedTile(
+      title: title,
+      subtitle: subtitle,
+      icon: icon,
+      color: color,
+      value: value,
+      options: options,
+      onChanged: onChanged,
+    );
+  }
+}
+
+class SettingsHeroPanel extends StatelessWidget {
+  const SettingsHeroPanel({super.key, required this.store});
+
+  final MobileStore store;
+
+  @override
+  Widget build(BuildContext context) {
+    return HeroPanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF0F9D8A), Color(0xFF46C2B2)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Icon(
+                  Icons.tune_rounded,
+                  color: Colors.white,
+                  size: 30,
+                ),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '整机功能控制',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF123B35),
+                      ),
+                    ),
+                    SizedBox(height: 6),
+                    Text(
+                      '这些设置会跟随读频数据保存，并在写频时回写到 0x9000 功能块。',
+                      style: TextStyle(color: Color(0xFF607570), height: 1.45),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final columns = constraints.maxWidth < 520 ? 2 : 4;
+              final width =
+                  (constraints.maxWidth - 10 * (columns - 1)) / columns;
+              return Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  SizedBox(
+                    width: width,
+                    child: SettingsMetricMini(
+                      title: '连接',
+                      value: store.linkState.label,
+                      icon: Icons.bluetooth_connected_rounded,
+                      color: const Color(0xFF0F9D8A),
+                    ),
+                  ),
+                  SizedBox(
+                    width: width,
+                    child: SettingsMetricMini(
+                      title: '双守',
+                      value: safeChoice(
+                        RadioChoices.onOff,
+                        store.data.functions.dualStandby,
+                      ),
+                      icon: Icons.sync_alt_rounded,
+                      color: const Color(0xFF20A86B),
+                    ),
+                  ),
+                  SizedBox(
+                    width: width,
+                    child: SettingsMetricMini(
+                      title: 'A 显示',
+                      value: safeChoice(
+                        RadioChoices.displayMode,
+                        store.data.functions.chADisplay,
+                      ),
+                      icon: Icons.looks_one_rounded,
+                      color: const Color(0xFF326BFF),
+                    ),
+                  ),
+                  SizedBox(
+                    width: width,
+                    child: SettingsMetricMini(
+                      title: '蓝牙音频',
+                      value: '${store.data.functions.bluetoothAudioGain}',
+                      icon: Icons.headphones_rounded,
+                      color: const Color(0xFF00A6C8),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
       ),
     );
   }
+}
+
+class SettingsMetricMini extends StatelessWidget {
+  const SettingsMetricMini({
+    super.key,
+    required this.title,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
+
+  final String title;
+  final String value;
+  final IconData icon;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7FBFA),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE7F1EE)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(fontSize: 11, color: Colors.black54),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class SettingsSectionPanel extends StatelessWidget {
+  const SettingsSectionPanel({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+    required this.children,
+  });
+
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return PanelCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(icon, color: color),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: SectionHeader(title: title, subtitle: subtitle),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final columns = constraints.maxWidth < 620 ? 1 : 2;
+              final width =
+                  (constraints.maxWidth - 12 * (columns - 1)) / columns;
+              return Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  for (final child in children)
+                    SizedBox(width: width, child: child),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class SettingMenuTile extends StatelessWidget {
+  const SettingMenuTile({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+    required this.value,
+    required this.options,
+    required this.onChanged,
+  });
+
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  final int value;
+  final List<String> options;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return SettingTileShell(
+      title: title,
+      subtitle: subtitle,
+      icon: icon,
+      color: color,
+      trailing: SizedBox(
+        width: 136,
+        child: DropdownButtonFormField<int>(
+          initialValue: value.clamp(0, options.length - 1).toInt(),
+          isExpanded: true,
+          decoration: const InputDecoration(
+            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          ),
+          items: List.generate(
+            options.length,
+            (index) => DropdownMenuItem<int>(
+              value: index,
+              child: Text(options[index], overflow: TextOverflow.ellipsis),
+            ),
+          ),
+          onChanged: (next) => onChanged(next ?? 0),
+        ),
+      ),
+    );
+  }
+}
+
+class SettingSegmentedTile extends StatelessWidget {
+  const SettingSegmentedTile({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+    required this.value,
+    required this.options,
+    required this.onChanged,
+  });
+
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  final int value;
+  final List<String> options;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final safeValue = value.clamp(0, options.length - 1).toInt();
+    return SettingTileShell(
+      title: title,
+      subtitle: subtitle,
+      icon: icon,
+      color: color,
+      trailing: SegmentedButton<int>(
+        showSelectedIcon: false,
+        segments: List.generate(
+          options.length,
+          (index) =>
+              ButtonSegment<int>(value: index, label: Text(options[index])),
+        ),
+        selected: {safeValue},
+        onSelectionChanged: (values) => onChanged(values.first),
+      ),
+    );
+  }
+}
+
+class SettingTextTile extends StatelessWidget {
+  const SettingTextTile({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+    required this.initialValue,
+    required this.hint,
+    required this.onChanged,
+  });
+
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  final String initialValue;
+  final String hint;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return SettingTileShell(
+      title: title,
+      subtitle: subtitle,
+      icon: icon,
+      color: color,
+      trailing: SizedBox(
+        width: 160,
+        child: TextFormField(
+          key: ValueKey('setting-text-$title-$initialValue'),
+          initialValue: initialValue,
+          decoration: InputDecoration(
+            hintText: hint,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
+          ),
+          onChanged: onChanged,
+        ),
+      ),
+    );
+  }
+}
+
+class SettingHelpTile extends StatelessWidget {
+  const SettingHelpTile({
+    super.key,
+    required this.showHelp,
+    required this.onChanged,
+  });
+
+  final bool showHelp;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return SettingTileShell(
+      title: '设置说明',
+      subtitle: '展开后显示关键功能解释',
+      icon: Icons.help_outline_rounded,
+      color: const Color(0xFF6D5BD0),
+      trailing: Switch.adaptive(value: showHelp, onChanged: onChanged),
+    );
+  }
+}
+
+class SettingTileShell extends StatelessWidget {
+  const SettingTileShell({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+    required this.trailing,
+  });
+
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  final Widget trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 88),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FCFB),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE7F1EE)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.black54,
+                    height: 1.25,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          trailing,
+        ],
+      ),
+    );
+  }
+}
+
+String safeChoice(List<String> options, int index) {
+  if (options.isEmpty) {
+    return '未知';
+  }
+  return options[index.clamp(0, options.length - 1).toInt()];
 }
 
 class ToolsPage extends StatefulWidget {
