@@ -714,6 +714,13 @@ class ChannelsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    void openChannelEditor() {
+      showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        builder: (_) => ChannelEditorSheet(store: store),
+      );
+    }
 
     return CustomScrollView(
       slivers: [
@@ -866,7 +873,10 @@ class ChannelsPage extends StatelessWidget {
                             label: '新建信道',
                             icon: Icons.add_circle_outline_rounded,
                             primary: true,
-                            onPressed: store.prepareNewChannelInCurrentBank,
+                            onPressed: () {
+                              store.prepareNewChannelInCurrentBank();
+                              openChannelEditor();
+                            },
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -927,7 +937,7 @@ class ChannelsPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SectionHeader(title: '信道列表', subtitle: '点一条再往下编辑。'),
+                    const SectionHeader(title: '信道列表', subtitle: '点一条打开编辑页。'),
                     const SizedBox(height: 12),
                     if (store.filteredChannels.isEmpty)
                       const EmptyTile(
@@ -939,41 +949,97 @@ class ChannelsPage extends StatelessWidget {
                         SelectableChannelTile(
                           channel: channel,
                           selected: channel.id == store.currentChannel.id,
-                          onTap: () => store.selectChannel(channel.id),
+                          onTap: () {
+                            store.selectChannel(channel.id);
+                            openChannelEditor();
+                          },
                         ),
                         const SizedBox(height: 10),
                       ],
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
-              PanelCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class ChannelEditorSheet extends StatelessWidget {
+  const ChannelEditorSheet({super.key, required this.store});
+
+  final MobileStore store;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return SafeArea(
+      child: DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.9,
+        minChildSize: 0.62,
+        maxChildSize: 0.97,
+        builder: (context, controller) {
+          return Material(
+            color: const Color(0xFFF4FBF9),
+            child: ListView(
+              controller: controller,
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+              children: [
+                Row(
                   children: [
-                    SectionHeader(
-                      title: 'CH-${store.currentChannel.id} 详情',
-                      subtitle: store.currentChannel.visible
-                          ? '这条信道会参与写回。'
-                          : '当前还是空白信道，填完频率就会变成有效信道。',
+                    IconButton(
+                      tooltip: '关闭',
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close_rounded),
                     ),
-                    const SizedBox(height: 12),
-                    if (store.showFieldHints) ...[
-                      const HintTile(
-                        text: '最常改的是接收频率、发射频率和发射亚音。很多中继台直接把这三项配对就够用。',
+                    const Expanded(
+                      child: Text(
+                        '编辑信道',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
-                      const SizedBox(height: 12),
-                    ],
-                    FormFieldCard(
-                      title: '信道名称',
-                      child: TextFormField(
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('完成'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                HeroPanel(
+                  child: Column(
+                    children: [
+                      Text(
+                        'CH-${store.currentChannel.id}',
+                        style: const TextStyle(
+                          color: Color(0xFF607570),
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      TextFormField(
                         key: ValueKey(
-                          'name-${store.currentChannel.id}-${store.currentChannel.name}',
+                          'sheet-name-${store.currentChannel.id}-${store.currentChannel.name}',
                         ),
                         initialValue: store.currentChannel.name,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                        ),
                         decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                          hintText: '例：梧桐山',
+                          hintText: '信道名称',
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          filled: false,
                         ),
                         onChanged: (value) => store.updateCurrentChannel(
                           (channel) => channel.name = value.characters
@@ -981,113 +1047,161 @@ class ChannelsPage extends StatelessWidget {
                               .toString(),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    FormFieldCard(
-                      title: '接收频率',
-                      child: TextFormField(
-                        key: ValueKey(
-                          'rx-${store.currentChannel.id}-${store.currentChannel.rxFreq}',
-                        ),
-                        initialValue: store.currentChannel.rxFreq,
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                          hintText: '439.46250',
-                        ),
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        onChanged: (value) => store.updateCurrentChannel(
-                          (channel) => channel.rxFreq = value,
-                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                PanelCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SectionHeader(
+                        title: '频率配置',
+                        subtitle: '接收和发射频率会决定这条信道的核心收发参数。',
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    FormFieldCard(
-                      title: '发射频率',
-                      child: TextFormField(
-                        key: ValueKey(
-                          'tx-${store.currentChannel.id}-${store.currentChannel.txFreq}',
+                      const SizedBox(height: 12),
+                      if (store.showFieldHints) ...[
+                        const HintTile(
+                          text: '常用中继台一般填接收频率、发射频率和发射亚音即可。频率可以自由输入小数。',
                         ),
-                        initialValue: store.currentChannel.txFreq,
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                          hintText: '434.46250',
-                        ),
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        onChanged: (value) => store.updateCurrentChannel(
-                          (channel) => channel.txFreq = value,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    FormFieldCard(
-                      title: '接收亚音',
-                      child: DropdownButtonFormField<String>(
-                        initialValue: store.currentChannel.rxTone,
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                        ),
-                        items: ToneLibrary.choices
-                            .map(
-                              (tone) => DropdownMenuItem(
-                                value: tone,
-                                child: Text(tone),
+                        const SizedBox(height: 12),
+                      ],
+                      Row(
+                        children: [
+                          Expanded(
+                            child: FormFieldCard(
+                              title: '接收频率',
+                              child: TextFormField(
+                                key: ValueKey(
+                                  'sheet-rx-${store.currentChannel.id}-${store.currentChannel.rxFreq}',
+                                ),
+                                initialValue: store.currentChannel.rxFreq,
+                                decoration: const InputDecoration(
+                                  hintText: '439.46250',
+                                  suffixText: 'MHz',
+                                ),
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
+                                onChanged: (value) =>
+                                    store.updateCurrentChannel(
+                                      (channel) => channel.rxFreq = value,
+                                    ),
                               ),
-                            )
-                            .toList(),
-                        onChanged: (value) => store.updateCurrentChannel(
-                          (channel) => channel.rxTone = value ?? 'OFF',
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    FormFieldCard(
-                      title: '发射亚音',
-                      child: DropdownButtonFormField<String>(
-                        initialValue: store.currentChannel.txTone,
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                        ),
-                        items: ToneLibrary.choices
-                            .map(
-                              (tone) => DropdownMenuItem(
-                                value: tone,
-                                child: Text(tone),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: FormFieldCard(
+                              title: '发射频率',
+                              child: TextFormField(
+                                key: ValueKey(
+                                  'sheet-tx-${store.currentChannel.id}-${store.currentChannel.txFreq}',
+                                ),
+                                initialValue: store.currentChannel.txFreq,
+                                decoration: const InputDecoration(
+                                  hintText: '434.46250',
+                                  suffixText: 'MHz',
+                                ),
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
+                                onChanged: (value) =>
+                                    store.updateCurrentChannel(
+                                      (channel) => channel.txFreq = value,
+                                    ),
                               ),
-                            )
-                            .toList(),
-                        onChanged: (value) => store.updateCurrentChannel(
-                          (channel) => channel.txTone = value ?? 'OFF',
-                        ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    FormFieldCard(
-                      title: '功率',
-                      child: SegmentedButton<int>(
-                        segments: List.generate(
-                          RadioChoices.power.length,
-                          (index) => ButtonSegment<int>(
-                            value: index,
-                            label: Text(RadioChoices.power[index]),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                PanelCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SectionHeader(
+                        title: '亚音与信令',
+                        subtitle: 'CTCSS / DCS 会跟随当前信道保存。',
+                      ),
+                      const SizedBox(height: 12),
+                      FormFieldCard(
+                        title: '接收亚音',
+                        child: DropdownButtonFormField<String>(
+                          initialValue: store.currentChannel.rxTone,
+                          items: ToneLibrary.choices
+                              .map(
+                                (tone) => DropdownMenuItem(
+                                  value: tone,
+                                  child: Text(tone),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (value) => store.updateCurrentChannel(
+                            (channel) => channel.rxTone = value ?? 'OFF',
                           ),
                         ),
-                        selected: {store.currentChannel.txPower},
-                        onSelectionChanged: (value) =>
-                            store.updateCurrentChannel(
-                              (channel) => channel.txPower = value.first,
-                            ),
                       ),
-                    ),
-                    if (store.uiMode == AppUIMode.advanced) ...[
+                      const SizedBox(height: 10),
+                      FormFieldCard(
+                        title: '发射亚音',
+                        child: DropdownButtonFormField<String>(
+                          initialValue: store.currentChannel.txTone,
+                          items: ToneLibrary.choices
+                              .map(
+                                (tone) => DropdownMenuItem(
+                                  value: tone,
+                                  child: Text(tone),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (value) => store.updateCurrentChannel(
+                            (channel) => channel.txTone = value ?? 'OFF',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                PanelCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SectionHeader(
+                        title: '信道参数',
+                        subtitle: '功率、带宽、扫描加入和忙锁等参数。',
+                      ),
+                      const SizedBox(height: 12),
+                      FormFieldCard(
+                        title: '功率',
+                        child: SegmentedButton<int>(
+                          showSelectedIcon: false,
+                          segments: List.generate(
+                            RadioChoices.power.length,
+                            (index) => ButtonSegment<int>(
+                              value: index,
+                              label: Text(RadioChoices.power[index]),
+                            ),
+                          ),
+                          selected: {store.currentChannel.txPower},
+                          onSelectionChanged: (value) =>
+                              store.updateCurrentChannel(
+                                (channel) => channel.txPower = value.first,
+                              ),
+                        ),
+                      ),
                       const SizedBox(height: 10),
                       Theme(
                         data: theme.copyWith(dividerColor: Colors.transparent),
                         child: ExpansionTile(
                           tilePadding: EdgeInsets.zero,
+                          initiallyExpanded: store.uiMode == AppUIMode.advanced,
                           title: const Text('更多参数'),
                           childrenPadding: const EdgeInsets.only(bottom: 4),
                           children: [
@@ -1095,9 +1209,6 @@ class ChannelsPage extends StatelessWidget {
                               title: '带宽',
                               child: DropdownButtonFormField<int>(
                                 initialValue: store.currentChannel.bandwidth,
-                                decoration: const InputDecoration(
-                                  border: OutlineInputBorder(),
-                                ),
                                 items: List.generate(
                                   RadioChoices.bandwidth.length,
                                   (index) => DropdownMenuItem(
@@ -1117,9 +1228,6 @@ class ChannelsPage extends StatelessWidget {
                               title: '扫描加入',
                               child: DropdownButtonFormField<int>(
                                 initialValue: store.currentChannel.scanAdd,
-                                decoration: const InputDecoration(
-                                  border: OutlineInputBorder(),
-                                ),
                                 items: List.generate(
                                   RadioChoices.onOff.length,
                                   (index) => DropdownMenuItem(
@@ -1138,9 +1246,6 @@ class ChannelsPage extends StatelessWidget {
                               title: '忙锁',
                               child: DropdownButtonFormField<int>(
                                 initialValue: store.currentChannel.busyLock,
-                                decoration: const InputDecoration(
-                                  border: OutlineInputBorder(),
-                                ),
                                 items: List.generate(
                                   RadioChoices.onOff.length,
                                   (index) => DropdownMenuItem(
@@ -1160,9 +1265,6 @@ class ChannelsPage extends StatelessWidget {
                               title: 'PTT ID',
                               child: DropdownButtonFormField<int>(
                                 initialValue: store.currentChannel.pttId,
-                                decoration: const InputDecoration(
-                                  border: OutlineInputBorder(),
-                                ),
                                 items: List.generate(
                                   RadioChoices.pttId.length,
                                   (index) => DropdownMenuItem(
@@ -1180,58 +1282,103 @@ class ChannelsPage extends StatelessWidget {
                         ),
                       ),
                     ],
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ActionButton(
-                            label: '写频',
-                            icon: Icons.upload_rounded,
-                            primary: true,
-                            onPressed: store.writeRadio,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: ActionButton(
-                            label: '手动备份',
-                            icon: Icons.save_rounded,
-                            onPressed: () => store.createBackup('手动备份'),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ActionButton(
-                            label: '清空当前',
-                            icon: Icons.delete_outline_rounded,
-                            onPressed: store.clearCurrentChannel,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: ActionButton(
-                            label: '打开导入',
-                            icon: Icons.playlist_add_rounded,
-                            onPressed: () => showModalBottomSheet<void>(
-                              context: context,
-                              isScrollControlled: true,
-                              builder: (_) => ImportSheet(store: store),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                PanelCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SectionHeader(
+                        title: '信道管理',
+                        subtitle: '这些操作会直接作用于当前 CH。',
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ActionButton(
+                              label: '复制',
+                              icon: Icons.content_copy_rounded,
+                              onPressed: store.copyCurrentChannel,
                             ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: ActionButton(
+                              label: '剪切',
+                              icon: Icons.content_cut_rounded,
+                              onPressed: store.cutCurrentChannel,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: ActionButton(
+                              label: '粘贴',
+                              icon: Icons.content_paste_rounded,
+                              onPressed: store.pasteToCurrentChannel,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ActionButton(
+                              label: '插入空信道',
+                              icon: Icons.playlist_add_rounded,
+                              onPressed: store.insertEmptyChannelAfterSelection,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: ActionButton(
+                              label: '删除上移',
+                              icon: Icons.delete_sweep_rounded,
+                              onPressed: store.deleteCurrentChannelAndShift,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ActionButton(
+                        label: '写频',
+                        icon: Icons.upload_rounded,
+                        primary: true,
+                        onPressed: store.writeRadio,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ActionButton(
+                        label: '手动备份',
+                        icon: Icons.save_rounded,
+                        onPressed: () => store.createBackup('手动备份'),
+                      ),
                     ),
                   ],
                 ),
-              ),
-            ],
-          ),
-        ),
-      ],
+                const SizedBox(height: 10),
+                ActionButton(
+                  label: '清空此信道',
+                  icon: Icons.delete_outline_rounded,
+                  onPressed: () {
+                    store.clearCurrentChannel();
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }
